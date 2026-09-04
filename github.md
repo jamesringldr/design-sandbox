@@ -1,4 +1,4 @@
-repo: jamesringldr/design-system
+repo: jamesringldr/design-sandbox
 branch: main
 
 ## Last sync
