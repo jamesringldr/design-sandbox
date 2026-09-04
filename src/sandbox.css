@@ -28,6 +28,10 @@ select {
   font: inherit;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .sandbox {
   display: flex;
   min-height: 100vh;

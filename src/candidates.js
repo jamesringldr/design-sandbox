@@ -11,7 +11,11 @@ if (!mount) {
 const candidates = listCandidates();
 
 if (empty) {
-  empty.hidden = candidates.length > 0;
+  if (candidates.length > 0) {
+    empty.remove();
+  } else {
+    empty.hidden = false;
+  }
 }
 
 for (const candidate of candidates) {
