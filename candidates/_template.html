@@ -1,0 +1,28 @@
+<!--
+  Duplicate this file as candidates/your-name.html
+  (do not keep the leading underscore — _ files are ignored).
+
+  data-workflow: mobbin | screenshot | layout | interaction | token | refinement
+
+  Sketch in HTML. Use Vanyshr tokens from src/tokens.css via var(--brand) etc.
+  Inline styles and a local <style> block are both fine — speed first.
+  Do not edit src/system.css until the candidate is adopted.
+-->
+<article
+  data-name="Candidate name"
+  data-workflow="screenshot"
+  data-note="What you are testing, in one line."
+>
+  <style>
+    .sketch {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 420px;
+    }
+  </style>
+  <div class="sketch">
+    <div class="image-slot" style="height: 160px;">drop sketch here</div>
+    <button type="button" class="btn btn-primary">Primary action</button>
+  </div>
+</article>

@@ -1,10 +1,12 @@
 # Vanyshr Design Workflow
 
-You are Claude Code working in the Vanyshr design sandbox. The artifact file is `Vanyshr Design System.dc.html` — a Design Component with strict formatting rules defined in CLAUDE.md.
+You are working in the Vanyshr **local design sandbox**, not a Claude artifact.
+The live preview is a Vite HTML app (`npm run dev`). Specs ship via `design.md`.
+Sandbox HTML is never copied into production.
 
 ## Entry Point
 
-**Task:** Convert a design reference (Mobbin, screenshot, interaction description, or token request) into a new component, layout, or spec for the artifact.
+**Task:** Convert a design reference (Mobbin, screenshot, interaction description, or token request) into a new candidate HTML file.
 
 **Workflow selection:**
 - **Component Redesign**: Mobbin link to a single component
@@ -14,6 +16,8 @@ You are Claude Code working in the Vanyshr design sandbox. The artifact file is 
 - **Design System Extension**: New token, color, sizing scale, or spacing rule
 - **Refinement**: Small targeted tweak to an existing component
 
+Always read `CLAUDE.md` and `design.md` before editing.
+
 ---
 
 ## Workflow: Component Redesign (Mobbin Reference)
@@ -21,10 +25,11 @@ You are Claude Code working in the Vanyshr design sandbox. The artifact file is 
 **Input required:** Mobbin link
 
 1. Pull the reference through the Mobbin MCP.
-2. Read the target component's current markup in the artifact (if it exists).
-3. Build the new version as a candidate in the artifact's Candidates section, restyled to match design.md tokens — never the Mobbin's colors, type, or radius.
-4. Do NOT replace the current version; leave it in place for side-by-side comparison.
-5. Commit: `candidate: [component name] from mobbin ref`.
+2. Read the current version on Foundations (`index.html` / `src/system.css`) if it exists.
+3. Copy `candidates/_template.html` to `candidates/<name>.html`.
+4. Set `data-workflow="mobbin"`. Restyle with tokens from `src/tokens.css` — never the Mobbin's colors, type, or radius.
+5. Do not replace the current version.
+6. Commit: `candidate: [component name] from mobbin ref`.
 
 ---
 
@@ -32,10 +37,10 @@ You are Claude Code working in the Vanyshr design sandbox. The artifact file is 
 
 **Input required:** Screenshot or image of a single component
 
-1. Analyze the screenshot for structure, states (default/hover/active/disabled/error), spacing, and interaction hints.
-2. Extract the *layout and interaction pattern* — not colors, type, or radius.
-3. Build a new component in the artifact's Candidates section, restyled to Vanyshr tokens.
-4. Include all visible states.
+1. Analyze structure, states, spacing, and interaction hints.
+2. Extract layout and behavior — not colors, type, or radius.
+3. New file in `candidates/` with `data-workflow="screenshot"`.
+4. Include all visible states. Use `.image-slot` for any image you have not rebuilt.
 5. Commit: `candidate: [component type] from screenshot`.
 
 ---
@@ -44,12 +49,11 @@ You are Claude Code working in the Vanyshr design sandbox. The artifact file is 
 
 **Input required:** Screenshot of a full page or screen
 
-1. Analyze the page structure: grid/flex layout, component placement, spacing, information hierarchy, and flow.
-2. Identify each component (header, nav, cards, buttons, inputs, etc.) and extract its pattern.
-3. Read existing components from the artifact; reuse what's there.
-4. Build missing components as new candidates.
-5. Build the full page layout in the artifact's Candidates section, using the components together.
-6. Commit: `candidate: [page name] layout with [n] components`.
+1. Analyze grid/flex, hierarchy, and component inventory.
+2. Reuse adopted primitives from `src/system.css`.
+3. Missing pieces get their own candidate files first.
+4. Assemble the page as `candidates/<page>.html` with `data-workflow="layout"`.
+5. Commit: `candidate: [page name] layout with [n] components`.
 
 ---
 
@@ -57,108 +61,62 @@ You are Claude Code working in the Vanyshr design sandbox. The artifact file is 
 
 **Input required:** Description, video, or screenshot of an interaction
 
-1. Analyze the interaction flow: trigger, animation/transition, end state, and any side effects.
-2. Translate into HTML/JavaScript under Vanyshr format rules (state in `renderVals()`, no expressions in template).
-3. Build a candidate component or page section that demonstrates the interaction.
+1. Trigger, transition, end state, side effects, reversibility.
+2. Implement it in working HTML/JS in the candidate file. Real click handlers are fine.
+3. `data-workflow="interaction"`.
 4. Commit: `candidate: [interaction name] pattern`.
 
 ---
 
 ## Workflow: Design System Extension (New Token or Scale)
 
-**Input required:** Description of the token, with rationale (where it fills a gap, what it complements)
+**Input required:** Description of the token, with rationale
 
-1. Propose the addition to design.md with rationale.
-2. If a visual artifact is needed, build a candidate section in the artifact showing the token in context.
-3. Commit: `add: [token name] to design.md` or `candidate: [token] scale demo`.
+1. Propose the addition in `design.md`.
+2. Demo it in a candidate (`data-workflow="token"`) so it can be seen in context.
+3. Do not add it to `src/tokens.css` until adopted.
+4. Commit: `add: [token name] to design.md` or `candidate: [token] scale demo`.
 
 ---
 
 ## Workflow: Refinement (Small Tweak)
 
-**Input required:** Feedback on an existing component (e.g., "button needs more padding")
+**Input required:** Feedback on an existing component
 
-1. Read the target component in the artifact.
-2. Make the minimal change (no redesign, no scope creep).
-3. Commit: `refine: [component] [change]`.
-
----
-
-## Format Rules (CRITICAL)
-
-Breaking these stops the artifact from rendering.
-
-- **Inline styles only** — no CSS classes, no stylesheets, no Tailwind.
-- **Template holes `{{ }}`** for data and state only — never expressions.
-- **No `React.createElement`** — all UI as template markup.
-- **Pseudo-states** use `style-hover`, `style-active`, `style-focus` attributes.
-- **Every element explicitly closed**, every attribute double-quoted.
-- **Colors and sizes are literals**, repeated as needed — never in holes.
-- **Control dimensions**: 32–36px tall, labels 10–13px, radius 4/6/10/full.
-- **Status** is outline-only chips; filled chips are counts only.
-- **One accent** (`#14ABFE`); orange, mint, red are semantic signals only.
-- **Dark only.** No light theme.
-- **Space Grotesk lowercase** restricted to terminal output — never interface chrome.
-
-If you can't express something under these rules, add it to design.md as a spec instead.
+1. If it is one property on an adopted primitive, edit `src/system.css` (or `index.html` if it is unique to Foundations).
+2. Otherwise make a candidate with `data-workflow="refinement"`.
+3. No redesign, no scope creep.
+4. Commit: `refine: [component] [change]`.
 
 ---
 
-## Tokens & Constraints
+## Format (this sandbox)
 
-### Color Palette
-- **Accent:** `#14ABFE` — primary action, highlights, focus states.
-- **Semantic orange:** Status, alerts, warnings (not decorative).
-- **Semantic mint:** Success, confirmation (not decorative).
-- **Semantic red:** Errors, destructive actions (not decorative).
-- **Neutrals:** Grays for surfaces, borders, text — adjust for dark contrast.
+The old Design Component rules (inline-only, no classes, `{{ holes }}`, `style-hover`)
+do not apply. This is a normal HTML app.
 
-### Spacing Scale
-- Base unit: 4px increments (4, 8, 12, 16, 20, 24, 32, 40, 48, 56, 64…)
-- Control padding: 8–12px horizontal, 6–10px vertical.
-- Gap between items: 8–12px.
-- Section spacing: 24–32px.
-- Page margins: 16–24px (mobile), 32–48px (desktop).
-
-### Type
-- Interface: System fonts or specified stack (see artifact).
-- Terminal/code: Space Grotesk lowercase only.
-- Sizes: 10–13px (labels), 14–16px (body), 18px+ (headings).
-
-### Radius
-- Small: 4px (inputs, small buttons).
-- Medium: 6px (standard components).
-- Large: 10px (cards, panels, modals).
-- Pill: 999px (badges, rounded buttons).
+- Adopted UI: CSS variables + `src/system.css` classes.
+- Candidates: whatever is fastest. Prefix sketch classes (`c-modal-v2`).
+- Tokens from `src/tokens.css` / `design.md`. No ad-hoc hex unless the sketch *is* a token proposal.
+- Dark only, compact, outline status chips, one accent, Space Grotesk for terminal only.
 
 ---
 
-## Adoption Workflow
+## Adoption
 
-**While exploring:** Add candidates to the Candidates section, leaving current versions in place.
-
-**On adoption** (when design review is complete):
-1. Delete the old component markup.
-2. Move the candidate into its place.
-3. Append or update that component's section in design.md.
-4. Add a `changelog.md` entry.
-5. Create a snapshot: copy the artifact to `versions/<ISO date>-v<n>/`, tag `git tag design-v<n>`.
+1. Move the winning visual onto Foundations.
+2. Promote reusable pieces into `src/system.css`.
+3. Update `design.md` and `changelog.md`.
+4. Snapshot `versions/<ISO date>-v<n>/`, tag `design-v<n>`.
+5. Delete the candidate file.
+6. Commit: `adopted: [name]`.
 
 ---
 
-## Before Committing
+## Before committing
 
-- [ ] All format rules followed.
-- [ ] Component/layout matches Vanyshr tokens.
-- [ ] All states visible (hover, focus, disabled, error, loading).
-- [ ] No overwrite of adopted components (candidates only).
-- [ ] Commit message clear and consistent.
-- [ ] If adopting: design.md, changelog.md updated; snapshot created.
-
----
-
-## When Stuck
-
-If a requirement can't fit the format rules, write it to design.md as a spec with ASCII diagrams, then build a simplified candidate that demonstrates the core idea under the constraints.
-
-When done, push to main.
+- [ ] Candidate uses Vanyshr tokens (unless it is a token proposal).
+- [ ] States visible (hover, focus, disabled, error, loading if they apply).
+- [ ] Foundations not overwritten (candidates only).
+- [ ] Commit message matches the workflow.
+- [ ] If adopting: design.md, changelog.md, snapshot.
