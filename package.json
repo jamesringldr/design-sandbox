@@ -1,0 +1,15 @@
+{
+  "name": "vanyshr-design-sandbox",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Local visual CAD for the Vanyshr design system. Specs ship to production; code does not.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.3.5"
+  }
+}

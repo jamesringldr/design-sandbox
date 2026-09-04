@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vanyshr · Candidates</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .workflow-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 12px;
+      }
+      .workflow-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 16px;
+        background: var(--surface-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-panel);
+      }
+      .candidate-list {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .candidate-frame {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-panel);
+        overflow: hidden;
+        background: var(--surface-elevated);
+      }
+      .candidate-frame-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        background: var(--background);
+      }
+      .candidate-frame-body {
+        padding: 24px;
+        background: var(--background);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="sandbox">
+      <aside class="sandbox-nav" data-sandbox-nav></aside>
+      <main class="sandbox-main">
+        <div class="sandbox-stack">
+          <div style="display: flex; flex-direction: column; gap: 10px; max-width: 720px;">
+            <div class="type-label">Sketch before you specify</div>
+            <div class="type-display">Candidates</div>
+            <div class="type-body" style="color: var(--text-muted);">
+              Every new idea lands here first. Leave Foundations alone until a candidate is
+              adopted. Duplicate <span class="type-data">candidates/_template.html</span>,
+              sketch in HTML, and this page picks it up on reload. Production never receives
+              this markup — only a <span class="type-data">design.md</span> diff after adoption.
+            </div>
+          </div>
+
+          <section style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="section-head">
+              <div class="type-label">Entry points</div>
+              <div class="rule"></div>
+            </div>
+            <div class="workflow-grid">
+              <div class="workflow-card">
+                <div class="type-label">mobbin</div>
+                <div class="type-heading">Component redesign</div>
+                <div class="type-caption">
+                  Mobbin URL for one component. Steal structure and interaction, restyle with
+                  Vanyshr tokens.
+                </div>
+              </div>
+              <div class="workflow-card">
+                <div class="type-label">screenshot</div>
+                <div class="type-heading">Component converter</div>
+                <div class="type-caption">
+                  Screenshot of a single control or card. Extract pattern and states, not
+                  colors or type.
+                </div>
+              </div>
+              <div class="workflow-card">
+                <div class="type-label">layout</div>
+                <div class="type-heading">Page layout converter</div>
+                <div class="type-caption">
+                  Full-page screenshot. Inventory components, reuse adopted ones, assemble a
+                  candidate layout.
+                </div>
+              </div>
+              <div class="workflow-card">
+                <div class="type-label">interaction</div>
+                <div class="type-heading">Interaction pattern</div>
+                <div class="type-caption">
+                  Video, GIF, or description. Prototype trigger, transition, and end state in
+                  working HTML.
+                </div>
+              </div>
+              <div class="workflow-card">
+                <div class="type-label">token</div>
+                <div class="type-heading">System extension</div>
+                <div class="type-caption">
+                  New color, spacing, type, or radius. Propose in design.md and demo it here
+                  first.
+                </div>
+              </div>
+              <div class="workflow-card">
+                <div class="type-label">refinement</div>
+                <div class="type-heading">Small tweak</div>
+                <div class="type-caption">
+                  Padding, border, size. Change one property. Skip this page only if the
+                  adopted version is already correct and the tweak is tiny.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="section-head">
+              <div class="type-label">Sketches</div>
+              <div class="rule"></div>
+            </div>
+
+            <div class="candidate-list" data-candidates></div>
+
+            <div
+              class="workflow-card"
+              data-empty
+              style="max-width: 640px; padding: 24px;"
+            >
+              <div class="type-heading">No candidates yet</div>
+              <div class="type-caption" style="margin-top: 8px;">
+                Copy <span class="type-data">candidates/_template.html</span> to
+                <span class="type-data">candidates/your-sketch.html</span> (no leading
+                underscore). Set <span class="type-data">data-workflow</span> to one of the
+                entry points above. Save — Vite reloads this page with the sketch framed.
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="/src/candidates.js"></script>
+  </body>
+</html>

@@ -3,17 +3,19 @@ branch: main
 
 ## Last sync
 
-date: 2026-09-04T16:00:54.645Z
+date: 2026-09-04T17:30:00.000Z
 
 ### Updated in this project
-- Scaffolded the design sandbox: CLAUDE.md format rules, design.md v1 foundations, changelog.md.
-- Snapshotted the artifact to versions/2026-09-04-v1/.
-- Repo was empty at connection time; nothing imported from upstream.
+- Replaced Claude Design Component artifacts with a local Vite HTML sandbox.
+- Foundations, explorations, and candidates are HTML pages under `npm run dev`.
+- Spec handoff is still `design.md`. No sandbox code is copied into production.
 
 ## Screen map
 
-| Screen / file | Repo files |
+| Screen | Repo files |
 |---|---|
-| Vanyshr Design System.dc.html | Vanyshr Design System.dc.html, support.js, image-slot.js |
+| Foundations | index.html, src/tokens.css, src/system.css, src/sandbox.css |
+| Explorations | explorations.html |
+| Candidates | candidates.html, candidates/*.html, src/candidates.js |
 | Foundations spec | design.md |
 | Change history | changelog.md, versions/ |

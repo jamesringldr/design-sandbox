@@ -1,7 +1,8 @@
 # Vanyshr design system
 
-Source of truth for production. Generated from the design sandbox artifact.
-Integrate by diffing this file into the app; do not copy sandbox HTML into the app.
+Source of truth for production. Generated from the local design sandbox.
+Integrate by diffing this file into the app; do not copy sandbox HTML, CSS, or JS
+into the app. Production implements these tokens in React + Tailwind.
 
 - Version: v1
 - Date: 2026-09-04

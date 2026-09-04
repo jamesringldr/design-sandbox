@@ -1,73 +1,83 @@
 # Vanyshr design sandbox — working rules
 
-This repo is the **design sandbox** for Vanyshr. It is not the production app.
+This repo is the **local visual CAD** for Vanyshr. It is not the production app.
 Production integration happens by diffing `design.md` into the app repo — never by
-copying files from here into the app.
+copying HTML, CSS, or JS from here into the app.
+
+Run it with `npm install` then `npm run dev`. Edit HTML, save, the browser reloads.
 
 ## What lives here
 
 | Path | Role |
 |---|---|
-| `Vanyshr Design System.dc.html` | The live visual artifact. Single source of visual truth. |
-| `support.js` | Runtime for the artifact. **Never edit or delete.** |
-| `image-slot.js` | Drop-in image placeholder used by the artifact. |
-| `design.md` | Production-ready spec. Tokens now; a component section is appended each time a component is **adopted**. |
+| `index.html` | Foundations — adopted tokens, type, chips, controls, applied examples. |
+| `explorations.html` | Color and type pairing studies (1a adopted; 1b–1d kept for comparison). |
+| `candidates/` | Sketches. One HTML file per idea. Auto-listed on `candidates.html`. |
+| `candidates/_template.html` | Duplicate this. Files starting with `_` are ignored. |
+| `src/tokens.css` | CSS variables. Must match `design.md`. |
+| `src/system.css` | Adopted primitives only. Do not dump sketches here. |
+| `src/sandbox.css` | Sandbox chrome (nav, layout). Not part of the design system. |
+| `design.md` | Production spec. Tokens now; a component section is appended on **adoption**. |
 | `changelog.md` | Human-readable log of every system change. |
 | `versions/` | Dated whole-system snapshots for rollback. |
 
-## The artifact file format — read this before editing it
+## How to work
 
-`Vanyshr Design System.dc.html` is a **Design Component**. It has a strict shape and
-breaking it stops the file from rendering in the design tool the artifact lives in.
+This sandbox exists so ideas can be seen and tweaked before anyone writes production
+React. Speed is the point.
 
-Hard rules:
+1. **Adopted UI** uses tokens (`var(--brand)`) and classes in `src/system.css`. Changing
+   a token updates every adopted surface at once.
+2. **Candidates** are freeform HTML. Inline styles, a local `<style>` block, copied
+   markup — whatever is fastest. Prefix sketch classes so they do not collide
+   (`c-modal-v2`, not `modal`).
+3. **Do not** build this like the production app. No React, no Tailwind, no component
+   library to port. The printer is the production repo; this is CAD.
+4. **Do not** copy sandbox markup into production. After adoption, write the spec into
+   `design.md` and let production implement it in React + Tailwind.
 
-1. The file is one document: an `<x-dc>` element holding the template, plus a
-   `<script data-dc-script>` holding `class Component extends DCLogic { ... }`.
-   Do not restructure this into modules, do not add a bundler, do not convert it to JSX.
-2. **Inline styles only.** No CSS classes, no stylesheets, no Tailwind classes, no
-   `styled-components`. Every style is a `style="..."` attribute with literal values.
-   The only legal CSS in `<helmet><style>` is `@font-face`, `@keyframes`, and body resets.
-3. Template holes are `{{ dottedPath }}` **only** — no expressions, no function calls,
-   no ternaries. Compute in the logic class's `renderVals()` and expose the result by name.
-4. Repetition uses `<sc-for list="{{ items }}" as="item" hint-placeholder-count="3">`.
-   Conditionals use `<sc-if value="{{ flag }}">`. Always set the `hint-*` attributes.
-5. Do not put style or theme values in holes. Colors and sizes are written as literals in
-   the markup, repeated as needed. This is intentional — it keeps the file editable in the
-   visual editor and rendering while it streams.
-6. Pseudo-states are `style-hover`, `style-active`, `style-focus` attributes.
-7. Close every element explicitly. Double-quote every attribute.
-8. Never write UI as `React.createElement` — it becomes invisible to the visual editor.
+## Workflows
 
-If a change cannot be expressed under these rules, put it in `design.md` as a written
-spec instead of forcing it into the artifact.
+Pick the entry point that matches the input. Output is always a new file in
+`candidates/`, never an overwrite of Foundations.
 
-## Workflow
+| Workflow | Input | `data-workflow` |
+|---|---|---|
+| Component redesign | Mobbin URL | `mobbin` |
+| Component converter | Screenshot of one component | `screenshot` |
+| Page layout converter | Screenshot of a page | `layout` |
+| Interaction pattern | Video, GIF, or description | `interaction` |
+| Design system extension | New token + rationale | `token` |
+| Refinement | One property on an existing piece | `refinement` |
 
-**Redesigning a component from a Mobbin reference**
+Refinements that are truly one CSS value on an already-adopted primitive may edit
+`src/system.css` directly. Anything that changes structure, states, or layout goes
+through Candidates.
 
-1. Pull the reference through the Mobbin MCP.
-2. Read the target component's current markup in the artifact.
-3. Translate the reference's *structure and interaction* — not its colors, type, or radii —
-   into the tokens in `design.md`. The reference supplies layout and behavior; Vanyshr
-   supplies the visual language.
-4. Add the new version to the artifact's **Candidates** section, leaving the current
-   version in place. Do not overwrite the adopted component.
-5. Commit. The design review happens in the visual tool, not here.
+### Adding a candidate
 
-**On adoption**
+1. Copy `candidates/_template.html` to `candidates/<name>.html`.
+2. Set `data-name`, `data-workflow`, and `data-note`.
+3. Sketch the UI. Use Vanyshr tokens for color, spacing, and radius — not the
+   reference's visual language.
+4. Leave the current version on Foundations in place.
+5. Commit: `candidate: [name] from [source]`.
 
-Adopted replaces the previous version outright:
+### Adopting a candidate
 
-1. Delete the old component markup from the artifact; move the candidate into its place.
-2. Append or update that component's section in `design.md`.
-3. Add a `changelog.md` entry.
-4. Snapshot: copy the artifact to `versions/<ISO date>-v<n>/`, then tag `git tag design-v<n>`.
+1. Move the winning visual into Foundations (or a new section there).
+2. Promote reusable pieces into `src/system.css` and point them at tokens.
+3. Append or replace that component's section in `design.md`.
+4. Add a `changelog.md` entry.
+5. Snapshot: copy the current foundations + spec into
+   `versions/<YYYY-MM-DD>-v<n>/`, then `git tag design-v<n>`.
+6. Delete the candidate file.
+7. Commit: `adopted: [name]`.
 
-**Rollback**
+### Rollback
 
-Restore from `versions/<date>-v<n>/` and log the rollback in `changelog.md`. Snapshots are
-whole-system only — there is no per-component history.
+Restore from `versions/<date>-v<n>/` and log the rollback in `changelog.md`.
+Snapshots are whole-system only.
 
 ## Constraints to respect
 
@@ -78,3 +88,10 @@ whole-system only — there is no per-component history.
   never decorative.
 - Space Grotesk lowercase is confined to terminal and log output. Never interface chrome.
 - Web plus responsive mobile. No native-only components.
+- Explorations 1b–1d are historical. Do not pull their colors or type into tokens.
+
+## Tokens
+
+Source of truth is `design.md`. `src/tokens.css` must not drift. If a sketch needs a
+value that is not a token, that is a `token` workflow — propose it in `design.md`
+with rationale, demo it in a candidate, then add it to `src/tokens.css` on adoption.

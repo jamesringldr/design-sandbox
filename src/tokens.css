@@ -1,0 +1,61 @@
+:root {
+  /* Neutrals — Brick */
+  --background: #282828;
+  --surface: #404040;
+  --surface-elevated: #333333;
+  --border: rgba(255, 255, 255, 0.10);
+  --border-hover: rgba(255, 255, 255, 0.18);
+  --border-emphasis: rgba(255, 255, 255, 0.24);
+
+  --text: #ffffff;
+  --text-muted: #a3a3a3;
+
+  /* Brand */
+  --brand: #14abfe;
+  --brand-hover: #0b8fd9;
+  --brand-subtle: rgba(20, 171, 254, 0.14);
+  --brand-outline: rgba(20, 171, 254, 0.35);
+
+  /* Semantic */
+  --warning: #ff5e1f;
+  --warning-subtle: rgba(255, 94, 31, 0.14);
+  --warning-outline: rgba(255, 94, 31, 0.35);
+
+  --success: #3ddc97;
+  --success-subtle: rgba(61, 220, 151, 0.14);
+  --success-outline: rgba(61, 220, 151, 0.35);
+
+  --destructive: #e5484d;
+  --destructive-subtle: rgba(229, 72, 77, 0.14);
+  --destructive-outline: rgba(229, 72, 77, 0.35);
+
+  /* Inverted control (rare) */
+  --control-contrast: #e0dedc;
+  --on-control-contrast: #1a1a1a;
+
+  /* Splash / hero only */
+  --background-brand: #0a1628;
+
+  /* Type */
+  --font-sans: "IBM Plex Sans", Helvetica, sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+  --font-terminal: "Space Grotesk", monospace;
+
+  --text-display: 30px;
+  --text-title: 22px;
+  --text-heading: 15px;
+  --text-body: 14px;
+  --text-caption: 12px;
+  --text-label: 10px;
+  --text-data: 13px;
+  --text-terminal: 13px;
+
+  /* Geometry */
+  --radius-chip: 4px;
+  --radius-control: 6px;
+  --radius-panel: 10px;
+  --radius-pill: 999px;
+
+  --control-height: 34px;
+  --icon-size: 32px;
+}
