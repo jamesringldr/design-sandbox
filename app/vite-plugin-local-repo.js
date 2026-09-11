@@ -1,7 +1,14 @@
 import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import {
+  assignSlugs,
+  generateDesignMd,
+  generateThemeCss,
+  projectMeta,
+} from "./src/projectFiles.js";
 import {
   isTokenCandidate,
   shouldSkipDir,
@@ -10,10 +17,16 @@ import {
 import { extractThemes, themesEmpty } from "./src/tokens.js";
 
 const execFileAsync = promisify(execFile);
+const DATA_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../data"
+);
 const ROUTES = new Set([
   "/api/select-folder",
   "/api/select-file",
   "/api/read-tokens",
+  "/api/load",
+  "/api/save",
 ]);
 
 function send(res, status, body) {
@@ -69,6 +82,91 @@ function relativeTo(root, file) {
   return rel.split(path.sep).join("/");
 }
 
+async function readJson(file) {
+  const text = await fs.readFile(file, "utf8").catch(() => null);
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+async function writeFileAtomic(file, contents) {
+  await fs.mkdir(path.dirname(file), { recursive: true });
+  const tmp = `${file}.tmp`;
+  await fs.writeFile(tmp, contents, "utf8");
+  await fs.rename(tmp, file);
+}
+
+async function writeJson(file, value) {
+  await writeFileAtomic(file, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+async function loadPlayground() {
+  const index = await readJson(path.join(DATA_ROOT, "playground.json"));
+  if (!index) return { projects: [], activeId: null };
+  const projects = [];
+  for (const row of index.projects || []) {
+    const slug = row.slug;
+    if (!slug || typeof slug !== "string") continue;
+    const dir = path.join(DATA_ROOT, "projects", slug);
+    const meta = await readJson(path.join(dir, "project.json"));
+    const tokens = await readJson(path.join(dir, "tokens.json"));
+    if (!meta) continue;
+    projects.push({
+      ...meta,
+      slug,
+      colorsByTheme: tokens || { light: {}, dark: {} },
+    });
+  }
+  return { projects, activeId: index.activeId ?? null };
+}
+
+async function savePlayground(state) {
+  const projects = assignSlugs(Array.isArray(state.projects) ? state.projects : []);
+  const taken = new Set();
+  const roster = [];
+
+  for (const project of projects) {
+    const slug = project.slug;
+    taken.add(slug);
+    roster.push({ id: project.id, slug, name: project.name || "Untitled" });
+    const dir = path.join(DATA_ROOT, "projects", slug);
+    await fs.mkdir(dir, { recursive: true });
+    const tokens = project.colorsByTheme || {
+      light: project.colors || {},
+      dark: project.colors || {},
+    };
+    await writeJson(path.join(dir, "project.json"), projectMeta(project, slug));
+    await writeJson(path.join(dir, "tokens.json"), {
+      light: tokens.light || {},
+      dark: tokens.dark || {},
+    });
+    await writeFileAtomic(path.join(dir, "theme.css"), generateThemeCss(tokens));
+    await writeFileAtomic(
+      path.join(dir, "design.md"),
+      generateDesignMd(project, tokens)
+    );
+  }
+
+  await writeJson(path.join(DATA_ROOT, "playground.json"), {
+    version: 1,
+    activeId: state.activeId ?? null,
+    projects: roster,
+  });
+
+  const projectsDir = path.join(DATA_ROOT, "projects");
+  const dirs = await fs.readdir(projectsDir, { withFileTypes: true }).catch(() => []);
+  for (const entry of dirs) {
+    if (!entry.isDirectory()) continue;
+    if (taken.has(entry.name)) continue;
+    await fs.rm(path.join(projectsDir, entry.name), { recursive: true, force: true });
+  }
+
+  return { ok: true, projects: roster };
+}
+
 async function chooseMac(script) {
   const { stdout } = await execFileAsync("osascript", ["-e", script]);
   return stdout.trim();
@@ -117,6 +215,23 @@ export default function localRepoPlugin() {
             } catch {
               send(res, 409, { cancelled: true });
             }
+            return;
+          }
+
+          if (req.method === "GET" && url === "/api/load") {
+            const data = await loadPlayground();
+            send(res, 200, data);
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/save") {
+            const body = await readJsonBody(req);
+            if (!Array.isArray(body.projects)) {
+              send(res, 400, { error: "projects must be an array." });
+              return;
+            }
+            const result = await savePlayground(body);
+            send(res, 200, result);
             return;
           }
 

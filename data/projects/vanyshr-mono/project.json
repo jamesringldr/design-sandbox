@@ -1,0 +1,32 @@
+{
+  "id": "09f6a9a9-b962-4022-98fd-aad01f5b45ee",
+  "slug": "vanyshr-mono",
+  "name": "Vanyshr-mono",
+  "repoKind": "device",
+  "githubUrl": "",
+  "localPath": "/Users/jameso/DevWork/vanyshr-stack/Vanyshr-mono/",
+  "tokenFile": "packages/ui/src/styles/globals.css",
+  "tokenSource": "packages/ui/src/styles/globals.css",
+  "theme": "dark",
+  "componentLibrary": "boardui",
+  "tokenLocks": {
+    "brandPrimary": false,
+    "brandSecondary": false,
+    "background": false,
+    "backgroundBrand": false,
+    "surface": false,
+    "surfaceElevated": false
+  },
+  "elementLocks": {
+    "colors": false,
+    "typography": false,
+    "spacing": false,
+    "radius": false
+  },
+  "artifacts": [],
+  "routes": [
+    "/self-scan",
+    "/self-scan/loading",
+    "/self-scan/report"
+  ]
+}

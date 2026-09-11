@@ -1,3 +1,4 @@
+import { assignSlugs, slugify } from "./projectFiles.js";
 import { STARTER_THEMES } from "./tokens.js";
 
 const KEY = "design-playground.v1";
@@ -10,6 +11,7 @@ export function normalizeProject(project) {
   };
   return {
     ...project,
+    slug: project.slug || slugify(project.name),
     githubUrl: project.githubUrl || "",
     localPath: project.localPath || "",
     repoKind:
@@ -23,10 +25,12 @@ export function normalizeProject(project) {
     componentLibrary: project.componentLibrary || "",
     tokenLocks: project.tokenLocks || {},
     elementLocks: project.elementLocks || {},
+    artifacts: project.artifacts || [],
+    routes: project.routes || [],
   };
 }
 
-export function loadState() {
+function loadLocal() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return { projects: [], activeId: null };
@@ -42,20 +46,59 @@ export function loadState() {
   }
 }
 
-export function saveState(state) {
-  localStorage.setItem(
-    KEY,
-    JSON.stringify({
-      projects: state.projects,
+function dropLocal() {
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export async function loadState() {
+  try {
+    const res = await fetch("/api/load");
+    if (res.ok) {
+      const data = await res.json();
+      const projects = Array.isArray(data.projects)
+        ? data.projects.map(normalizeProject)
+        : [];
+      if (projects.length > 0) {
+        dropLocal();
+        return { projects, activeId: data.activeId ?? projects[0].id };
+      }
+      const local = loadLocal();
+      if (local.projects.length > 0) return { ...local, migrated: true };
+      return { projects: [], activeId: data.activeId ?? null };
+    }
+  } catch {
+    /* fall through to localStorage */
+  }
+  return loadLocal();
+}
+
+export async function saveState(state) {
+  const projects = assignSlugs(state.projects.map(normalizeProject));
+  const res = await fetch("/api/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      projects,
       activeId: state.activeId,
-    })
-  );
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Save failed.");
+  }
+  dropLocal();
+  return { projects };
 }
 
 export function createProject(draft) {
   return normalizeProject({
     id: crypto.randomUUID(),
     name: draft.name.trim(),
+    slug: slugify(draft.name),
     repoKind: draft.repoKind || "github",
     githubUrl: (draft.githubUrl || "").trim(),
     localPath: (draft.localPath || "").trim(),

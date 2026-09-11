@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import ConfirmModal from "./components/ConfirmModal.jsx";
 import NewProjectModal from "./components/NewProjectModal.jsx";
 import ProjectSettings from "./components/ProjectSettings.jsx";
@@ -13,18 +13,67 @@ const TABS = [
 ];
 
 export default function App() {
-  const initial = useMemo(() => loadState(), []);
-  const [projects, setProjects] = useState(initial.projects);
-  const [activeId, setActiveId] = useState(initial.activeId);
+  const [projects, setProjects] = useState([]);
+  const [activeId, setActiveId] = useState(null);
   const [tab, setTab] = useState("styleguide");
   const [creating, setCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
+  const [hydrated, setHydrated] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
+  const [saveError, setSaveError] = useState("");
 
   const active = projects.find((project) => project.id === activeId) || null;
 
   useEffect(() => {
-    saveState({ projects, activeId });
-  }, [projects, activeId]);
+    let cancelled = false;
+    loadState()
+      .then((state) => {
+        if (cancelled) return;
+        setProjects(state.projects);
+        setActiveId(state.activeId);
+        setHydrated(true);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        setSaveStatus("error");
+        setSaveError(error.message || "Load failed.");
+        setHydrated(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    setSaveStatus("saving");
+    const timer = setTimeout(() => {
+      saveState({ projects, activeId })
+        .then((result) => {
+          if (result.projects) {
+            setProjects((current) => {
+              let changed = false;
+              const next = current.map((project) => {
+                const saved = result.projects.find((row) => row.id === project.id);
+                if (saved?.slug && saved.slug !== project.slug) {
+                  changed = true;
+                  return { ...project, slug: saved.slug };
+                }
+                return project;
+              });
+              return changed ? next : current;
+            });
+          }
+          setSaveStatus("saved");
+          setSaveError("");
+        })
+        .catch((error) => {
+          setSaveStatus("error");
+          setSaveError(error.message || "Save failed.");
+        });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [projects, activeId, hydrated]);
 
   function updateProject(next) {
     setProjects((current) =>
@@ -58,7 +107,11 @@ export default function App() {
           <p className="sidebar-title">Projects</p>
         </div>
         <div className="project-list">
-          {projects.length === 0 ? (
+          {!hydrated ? (
+            <p className="muted" style={{ padding: "8px 10px" }}>
+              Loading…
+            </p>
+          ) : projects.length === 0 ? (
             <p className="muted" style={{ padding: "8px 10px" }}>
               No projects yet.
             </p>
@@ -95,6 +148,20 @@ export default function App() {
           >
             Add project
           </button>
+          <p
+            className={`save-status ${saveStatus === "error" ? "error" : ""}`}
+            aria-live="polite"
+          >
+            {!hydrated
+              ? "Loading…"
+              : saveStatus === "saving"
+                ? "Saving…"
+                : saveStatus === "error"
+                  ? saveError || "Save failed."
+                  : saveStatus === "saved"
+                    ? "Saved to disk"
+                    : ""}
+          </p>
         </div>
       </aside>
 
@@ -113,7 +180,15 @@ export default function App() {
           ))}
         </nav>
 
-        {!active ? (
+        {!hydrated ? (
+          <div className="page">
+            <div className="empty">
+              <div className="eyebrow">Playground</div>
+              <h2>Loading projects from disk</h2>
+              <p className="muted">Reading data/playground.json.</p>
+            </div>
+          </div>
+        ) : !active ? (
           <div className="page">
             <div className="empty">
               <div className="eyebrow">Get started</div>
@@ -151,7 +226,7 @@ export default function App() {
       {pendingDelete ? (
         <ConfirmModal
           title="Remove project"
-          body={`Remove ${pendingDelete.name}? This only deletes it from the playground.`}
+          body={`Remove ${pendingDelete.name}? This deletes it from the playground and from disk.`}
           confirmLabel="Remove"
           onCancel={() => setPendingDelete(null)}
           onConfirm={() => removeProject(pendingDelete.id)}
