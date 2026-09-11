@@ -393,16 +393,38 @@ export function resolveDisplayColors(colors) {
   });
 }
 
+const GUIDE_ALIASES = [
+  { id: "text", aliases: ["text", "colorTextPrimary", "colorFgPrimary", "colorGray50"] },
+  { id: "textMuted", aliases: ["textMuted", "colorTextSecondary", "colorFgSecondary", "colorGray300", "colorGray400"] },
+  { id: "border", aliases: ["border", "colorBorderPrimary", "colorBorderSecondary"] },
+  { id: "warning", aliases: ["warning", "colorWarning500", "colorFgWarningPrimary"] },
+  { id: "success", aliases: ["success", "colorSuccess500", "colorFgSuccessPrimary"] },
+  { id: "destructive", aliases: ["destructive", "colorError500", "colorFgErrorPrimary"] },
+  { id: "onControlContrast", aliases: ["onControlContrast", "colorBrandInk", "colorBlack"] },
+];
+
+function pickAlias(colors, aliases) {
+  for (const alias of aliases) {
+    const found = lookupColor(colors, alias);
+    if (found && looksLikeColor(found)) return found;
+  }
+  return "";
+}
+
 export function canonicalColors(colors) {
   const out = { ...(colors || {}) };
   for (const row of resolveDisplayColors(out)) {
     if (!row.value) continue;
     out[row.id] = row.value;
-    if (row.id === "brandPrimary") {
-      out.brand = out.brand || row.value;
-    }
-    if (row.id === "brandSecondary") {
-      out.brandHover = out.brandHover || row.value;
+    if (row.id === "brandPrimary") out.brand = out.brand || row.value;
+    if (row.id === "brandSecondary") out.brandHover = out.brandHover || row.value;
+    if (row.id === "surfaceElevated") out.surfaceElevated = out.surfaceElevated || row.value;
+    if (row.id === "backgroundBrand") out.backgroundBrand = out.backgroundBrand || row.value;
+  }
+  for (const guide of GUIDE_ALIASES) {
+    if (!out[guide.id]) {
+      const value = pickAlias(out, guide.aliases);
+      if (value) out[guide.id] = value;
     }
   }
   return out;
