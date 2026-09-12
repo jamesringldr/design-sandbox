@@ -4,6 +4,12 @@ import { WIREFRAMES } from "../screens/index.js";
 import { applyColors, resolvePaintColors, STARTER_THEMES } from "../tokens.js";
 import ColorwayEditor from "./ColorwayEditor.jsx";
 
+const VIEW_TABS = [
+  { id: "live", label: "Live" },
+  { id: "static", label: "Static" },
+  { id: "layout", label: "Layout" },
+];
+
 const EDITORS = [
   { id: "colorway", label: "Colorway" },
   { id: "libraries", label: "Libraries" },
@@ -115,7 +121,17 @@ function ViewScreen({ colors, theme, aspect, variant, children }) {
   );
 }
 
-function PreviewFrame({ origin, route, colors, theme, aspect, variant, Wireframe }) {
+function PlaceholderScreen({ colors, theme, aspect, variant, label }) {
+  return (
+    <ViewScreen colors={colors} theme={theme} aspect={aspect} variant={variant}>
+      <div className="viz-placeholder">
+        <p className="muted">{label}</p>
+      </div>
+    </ViewScreen>
+  );
+}
+
+function PreviewFrame({ origin, route, colors, theme, aspect, variant }) {
   const ref = useRef(null);
   const src = previewFrameSrc(origin, route);
 
@@ -123,16 +139,16 @@ function PreviewFrame({ origin, route, colors, theme, aspect, variant, Wireframe
     paintPreview(ref.current, colors, theme);
   }, [colors, theme]);
 
-  if (Wireframe) {
-    return (
-      <ViewScreen colors={colors} theme={theme} aspect={aspect} variant={variant}>
-        <Wireframe />
-      </ViewScreen>
-    );
-  }
-
   if (!src) {
-    return <ViewScreen colors={colors} theme={theme} aspect={aspect} variant={variant} />;
+    return (
+      <PlaceholderScreen
+        colors={colors}
+        theme={theme}
+        aspect={aspect}
+        variant={variant}
+        label="Start the app to render live views."
+      />
+    );
   }
 
   const phone = variant === "phone" ? parseAspect(aspect) : null;
@@ -167,7 +183,8 @@ export default function Visualizer({ project, onUpdate }) {
   const [devError, setDevError] = useState("");
   const [devPort, setDevPort] = useState("");
   const [liveKey, setLiveKey] = useState(0);
-  const [previewSource, setPreviewSource] = useState("wireframe");
+  const [viewTab, setViewTab] = useState("live");
+  const [staticSource, setStaticSource] = useState("lofi");
   const [openEditor, setOpenEditor] = useState(null);
   const [draftByTheme, setDraftByTheme] = useState(() => themeBags(project));
   const [savedByTheme, setSavedByTheme] = useState(() => themeBags(project));
@@ -181,7 +198,6 @@ export default function Visualizer({ project, onUpdate }) {
   const preset = presets.find((item) => item.id === presetId) || presets[0];
   const active = routes.includes(selected) ? selected : routes[0] || "";
   const Wireframe = WIREFRAMES[active];
-  const source = Wireframe && previewSource === "wireframe" ? "wireframe" : "live";
 
   useEffect(() => {
     const bags = themeBags(project);
@@ -352,11 +368,87 @@ export default function Visualizer({ project, onUpdate }) {
     setSelected(next);
   }
 
+  function canvasFrame(child) {
+    if (mode === "mobile") {
+      return <PhoneStage aspect={preset.aspect}>{child}</PhoneStage>;
+    }
+    return child;
+  }
+
+  let canvas = null;
+  if (viewTab === "live") {
+    canvas = canvasFrame(
+      <PreviewFrame
+        key={liveKey}
+        origin={previewOrigin}
+        route={active}
+        colors={colors}
+        theme={theme}
+        aspect={preset.aspect}
+        variant={mode === "mobile" ? "phone" : "desktop"}
+      />
+    );
+  } else if (viewTab === "static" && staticSource === "lofi" && Wireframe) {
+    canvas = canvasFrame(
+      <ViewScreen
+        colors={colors}
+        theme={theme}
+        aspect={preset.aspect}
+        variant={mode === "mobile" ? "phone" : "desktop"}
+      >
+        <Wireframe />
+      </ViewScreen>
+    );
+  } else if (viewTab === "static" && staticSource === "lofi") {
+    canvas = canvasFrame(
+      <PlaceholderScreen
+        colors={colors}
+        theme={theme}
+        aspect={preset.aspect}
+        variant={mode === "mobile" ? "phone" : "desktop"}
+        label="No LoFi for this view yet."
+      />
+    );
+  } else if (viewTab === "static") {
+    canvas = canvasFrame(
+      <PlaceholderScreen
+        colors={colors}
+        theme={theme}
+        aspect={preset.aspect}
+        variant={mode === "mobile" ? "phone" : "desktop"}
+        label="App shots coming next."
+      />
+    );
+  } else {
+    canvas = canvasFrame(
+      <PlaceholderScreen
+        colors={colors}
+        theme={theme}
+        aspect={preset.aspect}
+        variant={mode === "mobile" ? "phone" : "desktop"}
+        label="Layout coming next."
+      />
+    );
+  }
+
   return (
     <div className="viz">
       <div className="viz-stage">
+        <div className="viz-tabs" role="tablist" aria-label="Visualizer view">
+          {VIEW_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={viewTab === tab.id}
+              className={`viz-tab${viewTab === tab.id ? " on" : ""}`}
+              onClick={() => setViewTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
         <div className="viz-toolbar">
-          <div className="eyebrow">Visualizer</div>
           <select
             className="input viz-select"
             aria-label="Device type"
@@ -381,31 +473,33 @@ export default function Visualizer({ project, onUpdate }) {
               </option>
             ))}
           </select>
-          <input
-            className="input input-mono viz-preview-url"
-            aria-label="Preview origin"
-            placeholder="http://localhost:5173"
-            value={project.previewUrl || ""}
-            onChange={(event) =>
-              onUpdate({ ...project, previewUrl: event.target.value })
-            }
-          />
+          {viewTab === "live" ? (
+            <input
+              className="input input-mono viz-preview-url"
+              aria-label="Preview origin"
+              placeholder="http://localhost:5173"
+              value={project.previewUrl || ""}
+              onChange={(event) =>
+                onUpdate({ ...project, previewUrl: event.target.value })
+              }
+            />
+          ) : null}
           <div className="viz-toolbar-end">
-            {Wireframe ? (
-              <div className="seg" role="group" aria-label="Preview source">
+            {viewTab === "static" ? (
+              <div className="seg" role="group" aria-label="Static source">
                 <button
                   type="button"
-                  className={source === "wireframe" ? "on" : ""}
-                  onClick={() => setPreviewSource("wireframe")}
+                  className={staticSource === "appshots" ? "on" : ""}
+                  onClick={() => setStaticSource("appshots")}
                 >
-                  Wireframe
+                  AppShots
                 </button>
                 <button
                   type="button"
-                  className={source === "live" ? "on" : ""}
-                  onClick={() => setPreviewSource("live")}
+                  className={staticSource === "lofi" ? "on" : ""}
+                  onClick={() => setStaticSource("lofi")}
                 >
-                  Live
+                  LoFi
                 </button>
               </div>
             ) : null}
@@ -507,31 +601,7 @@ export default function Visualizer({ project, onUpdate }) {
                     </button>
                   </div>
                 </div>
-                {mode === "mobile" ? (
-                  <PhoneStage aspect={preset.aspect}>
-                    <PreviewFrame
-                      key={liveKey}
-                      origin={previewOrigin}
-                      route={active}
-                      colors={colors}
-                      theme={theme}
-                      aspect={preset.aspect}
-                      variant="phone"
-                      Wireframe={source === "wireframe" ? Wireframe : null}
-                    />
-                  </PhoneStage>
-                ) : (
-                  <PreviewFrame
-                    key={liveKey}
-                    origin={previewOrigin}
-                    route={active}
-                    colors={colors}
-                    theme={theme}
-                    aspect={preset.aspect}
-                    variant="desktop"
-                    Wireframe={source === "wireframe" ? Wireframe : null}
-                  />
-                )}
+                {canvas}
               </div>
             )}
           </div>
