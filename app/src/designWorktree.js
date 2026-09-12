@@ -7,6 +7,8 @@ import {
   BIBLE_COMPONENT_CANDIDATES,
   BIBLE_DESIGN_CANDIDATES,
   BIBLE_TOKEN_CANDIDATES,
+  isTemplateShaped,
+  parseDesignSections,
 } from "./bible.js";
 import { EXISTING_DESIGN_CANDIDATES, mapHarvestedColors } from "./bibleLanguage.js";
 import { playgroundBibleTemplate } from "./bibleTemplate.js";
@@ -328,6 +330,9 @@ export async function bootstrapBible(rootPath, options = {}) {
 
   if (source === "template" || source === "template-integrate") {
     let harvested = { light: {}, dark: {} };
+    let ingested = {};
+    let keepDesignMd = false;
+    let keepComponentsMd = false;
     if (source === "template-integrate") {
       const harvestFrom =
         options.uploadPath ||
@@ -344,14 +349,29 @@ export async function bootstrapBible(rootPath, options = {}) {
         harvested = mapHarvestedColors(extractThemes(text, file));
         if (Object.keys(harvested.dark).length) break;
       }
+      const existingMdRel = await firstExisting(root, BIBLE_DESIGN_CANDIDATES);
+      if (existingMdRel) {
+        const existingMd = await fs.readFile(path.join(root, existingMdRel), "utf8");
+        if (isTemplateShaped(existingMd)) {
+          keepDesignMd = true;
+        } else {
+          ingested = parseDesignSections(existingMd);
+        }
+      }
+      keepComponentsMd = Boolean(
+        await firstExisting(root, BIBLE_COMPONENT_CANDIDATES)
+      );
     }
     const template = playgroundBibleTemplate({
       name: options.name || "Untitled",
       tokenFile: paths.tokensCss,
       colorsByTheme: harvested,
+      ingested,
     });
     paths = template.paths;
     Object.assign(files, template.files);
+    if (keepDesignMd) delete files[paths.designMd];
+    if (keepComponentsMd) delete files[paths.componentsMd];
   } else if (source === "upload") {
     const upload = path.resolve(options.uploadPath || "");
     if (!options.uploadPath) throw new Error("Choose a file to upload.");

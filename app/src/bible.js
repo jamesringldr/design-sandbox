@@ -139,10 +139,10 @@ function colorwayTable(tokens) {
   ].join("\n");
 }
 
-export function generateBibleMd(project, tokens, paths) {
+export function generateBibleMd(project, tokens, paths, ingested = {}) {
   const name = project.name || "Untitled";
   const css = generateTokensCss(tokens).trim();
-  return [
+  const skeleton = [
     `# ${name} design system`,
     "",
     "Agent-facing bible. Fill this in the playground. Values live in the token file;",
@@ -278,12 +278,13 @@ export function generateBibleMd(project, tokens, paths) {
     `None adopted yet. Catalog: \`${paths.componentsMd}\`. Add a row when a primitive is adopted.`,
     "",
   ].join("\n");
+  return mergeIngestedIntoTemplate(skeleton, ingested);
 }
 
 export function parseDesignSections(text) {
   const found = {};
   if (!text) return found;
-  const re = /^##\s+(\d+)\.?\s+(.+)$/gm;
+  const re = /^##\s+§?(\d+)(?:\s*[.\u2014\u2013:—-]+\s*|\s+)(.+)$/gm;
   const matches = [...text.matchAll(re)];
   for (let i = 0; i < matches.length; i += 1) {
     const id = matches[i][1];
@@ -292,6 +293,54 @@ export function parseDesignSections(text) {
     found[id] = text.slice(start, end).trim();
   }
   return found;
+}
+
+export function isTemplateShaped(text) {
+  if (!text) return false;
+  const required = BIBLE_SECTIONS.filter((section) => !section.optional);
+  return required.every((section) =>
+    new RegExp(
+      `^##\\s+${section.id}\\s+${section.title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`,
+      "im"
+    ).test(text)
+  );
+}
+
+function cleanIngestedBody(body) {
+  return String(body || "")
+    .replace(/§(\d+)/g, "$1")
+    .replace(/§/g, "")
+    .trim();
+}
+
+function ingestedUsable(body) {
+  const text = cleanIngestedBody(body);
+  if (text.length < 80) return false;
+  if (/^_Stub\./m.test(text)) return false;
+  return true;
+}
+
+function mergeIngestedIntoTemplate(skeleton, ingested) {
+  if (!ingested || !Object.keys(ingested).length) return skeleton;
+  const start = skeleton.search(/^##\s+0\s+/m);
+  if (start < 0) return skeleton;
+  const parsed = parseDesignSections(skeleton);
+  const parts = [skeleton.slice(0, start).trimEnd(), ""];
+  for (const section of BIBLE_SECTIONS) {
+    const incoming = ingested[section.id];
+    const fallback = parsed[section.id];
+    if (section.optional && !ingestedUsable(incoming)) continue;
+    parts.push(sectionHeading(section.id, section.title), "");
+    if (section.id === "2") {
+      parts.push((fallback || "").trim(), "");
+      continue;
+    }
+    parts.push(
+      ingestedUsable(incoming) ? cleanIngestedBody(incoming) : (fallback || "").trim(),
+      ""
+    );
+  }
+  return `${parts.join("\n").trim()}\n`;
 }
 
 function sectionState(section, body) {
@@ -305,7 +354,7 @@ function sectionState(section, body) {
     const judgment = /10b|Judgment/i.test(body);
     if (!mechanical || !judgment) return "stub";
   }
-  if (section.id === "0" && !/\*\*Composition:\*\*/i.test(body)) return "stub";
+  if (section.id === "0" && !/\*\*Composition/i.test(body)) return "stub";
   if (section.id === "7") {
     const intensity = /intensity/i.test(body);
     const hover = /hover propert/i.test(body);

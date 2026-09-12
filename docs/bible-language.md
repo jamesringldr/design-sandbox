@@ -63,4 +63,8 @@ Font family names are filled per product. The skeleton leaves them `_unset_`.
 
 ## Template
 
-`+ Template` writes this skeleton with empty color values. If the repo already has design files, intake asks **Integrate existing** (map harvested colors onto these names) or **Start fresh** (empty skeleton). Until Save commits, the field reads **Un-Committed**.
+`+ Template` writes this skeleton. If the repo already has design files, intake asks **Integrate existing** or **Start fresh**.
+
+- **Start fresh** writes the empty skeleton.
+- **Integrate existing** treats this template as the format. An already-shaped DESIGN.md is not overwritten. An old-shaped DESIGN.md is ingested: its section bodies fill the template; color *names* stay Core Colors, with values harvested from the repo.
+- Until Save commits, the field reads **Un-Committed**.

@@ -16,7 +16,12 @@ export function playgroundBibleTemplate(project) {
   return {
     paths,
     files: {
-      [paths.designMd]: generateBibleMd(named, tokens, paths),
+      [paths.designMd]: generateBibleMd(
+        named,
+        tokens,
+        paths,
+        project.ingested || {}
+      ),
       [paths.tokensCss]: generateTokensCss(tokens),
       [paths.componentsMd]: generateComponentsMd(named),
     },
