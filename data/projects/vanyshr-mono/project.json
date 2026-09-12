@@ -27,6 +27,14 @@
   "routes": [
     "/self-scan",
     "/self-scan/loading",
-    "/self-scan/report"
-  ]
+    "/self-scan/report",
+    "/home"
+  ],
+  "previewUrl": "http://127.0.0.1:5173",
+  "bible": {
+    "designMd": "docs/DESIGN.md",
+    "tokensCss": "packages/ui/src/styles/tokens.css",
+    "componentsMd": "docs/COMPONENTS.md",
+    "claudeMd": "CLAUDE.md"
+  }
 }

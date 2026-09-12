@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import BiblePanel from "./components/BiblePanel.jsx";
 import ConfirmModal from "./components/ConfirmModal.jsx";
 import NewProjectModal from "./components/NewProjectModal.jsx";
 import ProjectSettings from "./components/ProjectSettings.jsx";
@@ -8,6 +9,7 @@ import { createProject, loadState, saveState } from "./storage.js";
 
 const TABS = [
   { id: "styleguide", label: "Style Guide" },
+  { id: "bible", label: "Design Bible" },
   { id: "visualizer", label: "Visualizer" },
   { id: "settings", label: "Project Settings" },
 ];
@@ -15,7 +17,10 @@ const TABS = [
 export default function App() {
   const [projects, setProjects] = useState([]);
   const [activeId, setActiveId] = useState(null);
-  const [tab, setTab] = useState("styleguide");
+  const [tab, setTab] = useState(() => {
+    const wanted = new URLSearchParams(window.location.search).get("tab");
+    return TABS.some((item) => item.id === wanted) ? wanted : "styleguide";
+  });
   const [creating, setCreating] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(null);
   const [hydrated, setHydrated] = useState(false);
@@ -173,7 +178,7 @@ export default function App() {
               type="button"
               className={`tab ${tab === item.id ? "active" : ""}`}
               onClick={() => setTab(item.id)}
-              disabled={!active && item.id !== "styleguide"}
+              disabled={projects.length === 0 && item.id !== "styleguide"}
             >
               {item.label}
             </button>
@@ -208,8 +213,10 @@ export default function App() {
           </div>
         ) : tab === "styleguide" ? (
           <StyleGuide project={active} onUpdate={updateProject} />
+        ) : tab === "bible" ? (
+          <BiblePanel project={active} onUpdate={updateProject} />
         ) : tab === "visualizer" ? (
-          <Visualizer project={active} />
+          <Visualizer project={active} onUpdate={updateProject} />
         ) : (
           <ProjectSettings
             project={active}

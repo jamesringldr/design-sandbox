@@ -1,3 +1,4 @@
+import { defaultBiblePaths } from "./bible.js";
 import { assignSlugs, slugify } from "./projectFiles.js";
 import { STARTER_THEMES } from "./tokens.js";
 
@@ -27,6 +28,8 @@ export function normalizeProject(project) {
     elementLocks: project.elementLocks || {},
     artifacts: project.artifacts || [],
     routes: project.routes || [],
+    previewUrl: project.previewUrl || "",
+    bible: defaultBiblePaths(project),
   };
 }
 

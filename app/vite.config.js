@@ -1,9 +1,10 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import localRepoPlugin from "./vite-plugin-local-repo.js";
+import previewProxyPlugin from "./vite-plugin-preview-proxy.js";
 
 export default defineConfig({
-  plugins: [react(), localRepoPlugin()],
+  plugins: [react(), localRepoPlugin(), previewProxyPlugin()],
   server: {
     port: 5180,
     strictPort: true,

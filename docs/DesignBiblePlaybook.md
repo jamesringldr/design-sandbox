@@ -78,10 +78,23 @@ configuration beyond that file existing.
 ## 2. DESIGN.md — required sections, in order
 
 Write for agents, not humans. Rules stated as rules, not suggestions. This exact
-section order, every time:
+section order, every time. §0–§11 are required for every project; §12 is optional
+and appears only when the product actually has bespoke, non-tokenizable effects.
+
+**Cross-cutting rule: when a pattern can't be reduced to a token or a short recipe,
+embed a real code snippet as the reference implementation.** A prose description of
+a shader or a complex interaction is lossy; a working code sample isn't. This applies
+wherever it's needed, not just in §12 — a bespoke chart interaction or a non-standard
+focus trap earns the same treatment.
 
 ### §0 — Quick Reference
 The only section every agent is guaranteed to read in full. Contents:
+- **Composition archetype, one line, first thing in the file:** layout type
+  (grid / full-bleed / boxed / sidebar+content), content width, and framing
+  material (flat / glass / skeuomorphic). Lets an agent orient to the
+  structural frame before it ever reaches a token — catches a "boxed
+  dashboard vs. full-bleed marketing page" mismatch before it becomes a
+  rebuild.
 - Flat list of all token names (names only, not values) grouped by category
 - The hard rules, in bold, restated from §3 of this playbook
 - Links to `tokens.css` and `COMPONENTS.md`
@@ -118,9 +131,29 @@ rules.
 Named shadow levels, named border-radius scale, and a border-emphasis ladder (rest →
 hover → emphasis → status-outline) if the product uses one.
 
+**Named technique recipes.** Some visual effects can't be reduced to a single
+token — they're a construction sequence. When one recurs (a gradient-border shell,
+a frosted-glass card stack, a specific glow treatment), give it a name and write the
+recipe as steps ("wrap the surface in an outer shell with Npx padding and 0 radius,
+drive the border with a gradient, inset the real content at a slightly smaller
+radius so the gradient reads as a hairline frame"), not just a shadow value. Agents
+copy the recipe; they don't reverse-engineer the effect from a screenshot.
+
 ### §7 — Motion
 Duration scale (`--duration-fast/normal/slow`), named easing curves, and the
 `prefers-reduced-motion` rule.
+
+- **Motion intensity — one named level for the whole product:** subtle /
+  moderate / bold. Gives agents a ceiling to check new animation ideas against
+  without re-deriving "how much motion is too much" per component.
+- **Hover-property taxonomy:** the explicit list of CSS properties allowed to
+  animate on hover (e.g. text, color, shadow, opacity) — and, by omission,
+  which are not (transform/scale, unless stated). Prevents one component
+  getting a bounce-scale hover while its neighbor gets a color fade.
+- **Scroll-pattern convention**, if the product uses scroll-driven reveals:
+  name the actual technique/library in use (e.g. "IntersectionObserver + CSS
+  transition," "GSAP ScrollTrigger") so agents extend the existing pattern
+  instead of introducing a second scroll-animation system.
 
 ### §8 — Icons
 Library/package, import pattern, named sizing scale, contextual usage rules.
@@ -131,8 +164,11 @@ defined once, referenced everywhere, so buttons/inputs/cards don't each reinvent
 their own hover behavior.
 
 ### §10 — Anti-patterns (the enforcement ground truth)
-Explicit prohibited-pattern list. This section is what the PreToolUse hook validates
-against, so it must be concrete and regex-able where possible:
+Two tiers, kept visually separate — they're validated differently.
+
+**§10a — Mechanical (hook-enforced).** Concrete, regex-able, checked by the
+PreToolUse hook or pre-commit guard automatically — a violation here is blocked
+before it lands, not just discouraged:
 ```
 NEVER in component files:
 - Raw hex (#282828, #14ABFE, ...)
@@ -146,9 +182,34 @@ NEVER in component files:
 - Hardcoded breakpoint values (use named breakpoint tokens)
 ```
 
+**§10b — Judgment (agent self-checked, not mechanically enforceable).** No hook
+can regex-match "used discretion badly" — these rely on the agent reading and
+applying them, which is exactly why they need to be spelled out explicitly rather
+than left implicit:
+```
+- Don't introduce a new accent color outside the core palette without a
+  genuine new semantic state to justify it.
+- Don't mix shadow/blur/elevation recipes that don't already coexist
+  elsewhere in the product — reuse an existing depth recipe.
+- Don't exceed the stated motion intensity (§7) without a deliberate,
+  stated reason.
+- Don't invent a new component when an existing one in COMPONENTS.md
+  covers the case with a different prop/variant.
+```
+
 ### §11 — Component Reference
 One line per component (name, file path, variants, one-line usage note); the full
 catalog with code examples lives in `COMPONENTS.md`, linked from here.
+
+### §12 — Bespoke Effects (optional — include only if applicable)
+For products with custom canvas/WebGL/shader work, or any other effect too one-off
+to tokenize. Document: scene/effect name, core primitives, motion character,
+interaction behavior (pointer-reactive, static, etc.), render approach (DPR
+clamping, custom shaders, library used), and named techniques. Embed the actual
+reference code (HTML structure + the core JS/shader source) directly in the doc per
+the cross-cutting rule in §2 — not just a prose description. Skip entirely for
+products without this kind of work (e.g. Vanyshr's dashboard has no use for this
+section; a ringldr marketing page with a shader hero would).
 
 ---
 
@@ -195,17 +256,19 @@ condition:
 `~/.claude/hooks/design-token-guard.py`, wired via `settings.json` on `Edit|Write`
 matched to UI file globs (`.tsx`, `.jsx`, `.vue`, `.svelte`, `.css`). Reads the tool
 call's file path + new content from stdin; if the file is a UI file, scans for the
-§10 forbidden patterns; on a hit, exits non-zero with a message naming the violation
-and the token to use instead, which blocks the write outright.
+§10a forbidden patterns (the mechanical tier — §10b is judgment-only and isn't
+hook-checkable); on a hit, exits non-zero with a message naming the violation and
+the token to use instead, which blocks the write outright.
 
 This is the only layer that makes a violation structurally impossible rather than
 merely discouraged — it fires before the file lands, not after.
 
 ### Layer 4 — Design compliance audit
 Extend `frontend-auditor` (or add a `design-auditor` pass) to run post-implementation:
-read DESIGN.md §10, grep changed files for the same forbidden patterns as the hook,
-report violations with the correct token. Catches anything written before the hook
-existed or in files the agent read but didn't pass through Edit/Write.
+grep changed files for §10a's forbidden patterns (the same regex set as the hook) to
+catch anything written before the hook existed or in files that didn't pass through
+Edit/Write, and separately walk §10b's judgment list by eye/model-review since it
+isn't regex-checkable. Report violations of either tier with the correct fix.
 
 ### Layer 5 — Component library (removes the decision, not just the violation)
 `COMPONENTS.md`, populated with every reusable primitive (Button, Input, Card, Modal,
@@ -251,7 +314,8 @@ Steps 5–6 happen once and then apply to every future project automatically. St
 
 A project is "on the design bible" when all of the following hold:
 
-- [ ] `docs/DESIGN.md` exists and has all 12 sections (§0–§11) filled, not stubbed
+- [ ] `docs/DESIGN.md` exists and has all 12 required sections (§0–§11) filled, not
+      stubbed — plus §12 (Bespoke Effects) if the product has that kind of work
 - [ ] `docs/COMPONENTS.md` exists and covers every reusable UI primitive in the codebase
 - [ ] `src/styles/tokens.css` exists and matches DESIGN.md §2/§4/§6/§7 exactly
 - [ ] CLAUDE.md has the `## Design` section from §3 Layer 1 of this playbook

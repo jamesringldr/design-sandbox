@@ -1,8 +1,17 @@
 import { execFile } from "node:child_process";
 import { promises as fs } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import {
+  assertSafeBibleTarget,
+  claudeDesignSection,
+  defaultBiblePaths,
+  evaluateBible,
+  generateBibleMd,
+  generateTokensCss,
+} from "./src/bible.js";
 import {
   assignSlugs,
   generateDesignMd,
@@ -14,6 +23,7 @@ import {
   shouldSkipDir,
   TOKEN_PATHS,
 } from "./src/tokenPaths.js";
+import { startDevServer, stopDevServer, devServerStatus } from "./src/devServer.js";
 import { extractThemes, themesEmpty } from "./src/tokens.js";
 
 const execFileAsync = promisify(execFile);
@@ -27,6 +37,11 @@ const ROUTES = new Set([
   "/api/read-tokens",
   "/api/load",
   "/api/save",
+  "/api/bible-status",
+  "/api/bible-integrate",
+  "/api/dev-server/start",
+  "/api/dev-server/stop",
+  "/api/dev-server/status",
 ]);
 
 function send(res, status, body) {
@@ -167,6 +182,56 @@ async function savePlayground(state) {
   return { ok: true, projects: roster };
 }
 
+const HOOK_FILE = path.join(
+  os.homedir(),
+  ".claude/hooks/design-token-guard.py"
+);
+
+async function readRel(root, rel) {
+  try {
+    const full = assertInside(root, path.join(root, rel));
+    return await fs.readFile(full, "utf8");
+  } catch {
+    return null;
+  }
+}
+
+function resolvedBiblePaths(body) {
+  const paths = defaultBiblePaths({
+    tokenFile: body.tokenFile || "",
+    bible: body.bible || {},
+  });
+  return {
+    designMd: assertSafeBibleTarget(paths.designMd),
+    tokensCss: assertSafeBibleTarget(paths.tokensCss),
+    componentsMd: assertSafeBibleTarget(paths.componentsMd),
+    claudeMd: assertSafeBibleTarget(paths.claudeMd),
+  };
+}
+
+async function scanBible(root, body, paths) {
+  const tokens = body.colorsByTheme || { light: {}, dark: {} };
+  const files = {
+    designMd: await readRel(root, paths.designMd),
+    tokensCss: await readRel(root, paths.tokensCss),
+    componentsMd: await readRel(root, paths.componentsMd),
+    claudeMd: await readRel(root, paths.claudeMd),
+  };
+  const hookExists = await fs
+    .stat(HOOK_FILE)
+    .then((stat) => stat.isFile())
+    .catch(() => false);
+  return {
+    paths,
+    localPath: root,
+    ...evaluateBible({
+      files,
+      generatedCss: generateTokensCss(tokens),
+      hookExists,
+    }),
+  };
+}
+
 async function chooseMac(script) {
   const { stdout } = await execFileAsync("osascript", ["-e", script]);
   return stdout.trim();
@@ -232,6 +297,112 @@ export default function localRepoPlugin() {
             }
             const result = await savePlayground(body);
             send(res, 200, result);
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/dev-server/status") {
+            const body = await readJsonBody(req);
+            send(res, 200, await devServerStatus(body.previewUrl));
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/dev-server/stop") {
+            const body = await readJsonBody(req);
+            send(res, 200, await stopDevServer(body.previewUrl));
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/dev-server/start") {
+            const body = await readJsonBody(req);
+            if (!body.localPath || typeof body.localPath !== "string") {
+              send(res, 400, {
+                error: "Attach a local folder to start the dev server.",
+              });
+              return;
+            }
+            const result = await startDevServer({
+              localPath: body.localPath,
+              previewUrl: body.previewUrl,
+              logDir: path.join(DATA_ROOT, "dev-logs"),
+            });
+            send(res, 200, result);
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/bible-status") {
+            const body = await readJsonBody(req);
+            if (!body.localPath || typeof body.localPath !== "string") {
+              send(res, 400, {
+                error: "A local folder is required to scan the bible.",
+              });
+              return;
+            }
+            const root = path.resolve(body.localPath);
+            const stat = await fs.stat(root).catch(() => null);
+            if (!stat?.isDirectory()) {
+              send(res, 400, { error: "That path is not a folder." });
+              return;
+            }
+            const paths = resolvedBiblePaths(body);
+            send(res, 200, await scanBible(root, body, paths));
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/bible-integrate") {
+            const body = await readJsonBody(req);
+            if (!body.localPath || typeof body.localPath !== "string") {
+              send(res, 400, {
+                error: "A local folder is required to integrate.",
+              });
+              return;
+            }
+            const root = path.resolve(body.localPath);
+            const stat = await fs.stat(root).catch(() => null);
+            if (!stat?.isDirectory()) {
+              send(res, 400, { error: "That path is not a folder." });
+              return;
+            }
+            const paths = resolvedBiblePaths(body);
+            const tokens = body.colorsByTheme || { light: {}, dark: {} };
+            const cssPath = assertInside(root, path.join(root, paths.tokensCss));
+            const mdPath = assertInside(root, path.join(root, paths.designMd));
+            const claudePath = assertInside(
+              root,
+              path.join(root, paths.claudeMd)
+            );
+            await writeFileAtomic(cssPath, generateTokensCss(tokens));
+            await writeFileAtomic(
+              mdPath,
+              generateBibleMd(
+                {
+                  name: body.name,
+                  componentLibrary: body.componentLibrary,
+                  tokenFile: body.tokenFile,
+                },
+                tokens,
+                paths
+              )
+            );
+            const existingClaude = await fs
+              .readFile(claudePath, "utf8")
+              .catch(() => "");
+            if (!/^## Design\b/m.test(existingClaude)) {
+              const next = `${existingClaude.trimEnd()}\n\n${claudeDesignSection(paths)}`;
+              await writeFileAtomic(
+                claudePath,
+                next.endsWith("\n") ? next : `${next}\n`
+              );
+            }
+            send(res, 200, {
+              wrote: {
+                tokensCss: paths.tokensCss,
+                designMd: paths.designMd,
+                claudeMd: /^## Design\b/m.test(existingClaude)
+                  ? null
+                  : paths.claudeMd,
+              },
+              ...(await scanBible(root, body, paths)),
+            });
             return;
           }
 

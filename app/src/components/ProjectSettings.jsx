@@ -156,19 +156,6 @@ export default function ProjectSettings({ project, onUpdate, onRemove }) {
       </div>
 
       <div className="panel">
-        <div className="eyebrow">Artifacts</div>
-        <p className="muted">
-          Design files in the repo that belong to this project — token files, style
-          guides, DC artifacts.
-        </p>
-        <StringList
-          items={project.artifacts}
-          onChange={(artifacts) => patch({ artifacts })}
-          placeholder="design.md"
-        />
-      </div>
-
-      <div className="panel">
         <div className="eyebrow">Visualizer routes</div>
         <p className="muted">App pages to include on the Visualizer tab.</p>
         <StringList
