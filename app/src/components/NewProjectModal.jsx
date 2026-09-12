@@ -1,15 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { parseGithubUrl } from "../github.js";
-import { discoverTokens } from "../sync.js";
-import {
-  defaultTokenLocks,
-  EMPTY_ELEMENT_LOCKS,
-  STARTER_THEMES,
-} from "../tokens.js";
-import ComponentLibraryField from "./ComponentLibraryField.jsx";
+import { bootstrapBible, findBible } from "../repo.js";
+import { defaultTokenLocks, EMPTY_ELEMENT_LOCKS } from "../tokens.js";
+import DesignBibleField from "./DesignBibleField.jsx";
 import RepoSource from "./RepoSource.jsx";
-import TokenFileField from "./TokenFileField.jsx";
-import TokenGrid from "./TokenGrid.jsx";
 
 const EMPTY_THEMES = { light: {}, dark: {} };
 
@@ -18,15 +12,25 @@ export default function NewProjectModal({ onClose, onSave }) {
   const [repoKind, setRepoKind] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [localPath, setLocalPath] = useState("");
+  const [sourcePath, setSourcePath] = useState("");
+  const [worktreeBranch, setWorktreeBranch] = useState("");
+  const [worktreeBase, setWorktreeBase] = useState("");
+  const [bibleSource, setBibleSource] = useState("");
+  const [bibleDisplay, setBibleDisplay] = useState("");
+  const [biblePaths, setBiblePaths] = useState(null);
+  const [uploadPath, setUploadPath] = useState("");
   const [tokenFile, setTokenFile] = useState("");
-  const [colorsByTheme, setColorsByTheme] = useState(STARTER_THEMES);
-  const [theme, setTheme] = useState("dark");
-  const [tokenLocks, setTokenLocks] = useState(defaultTokenLocks(STARTER_THEMES.dark));
-  const [elementLocks, setElementLocks] = useState({ ...EMPTY_ELEMENT_LOCKS });
-  const [componentLibrary, setComponentLibrary] = useState("");
-  const [tokenError, setTokenError] = useState("");
+  const [bibleError, setBibleError] = useState("");
   const [busy, setBusy] = useState(false);
-  const discoverId = useRef(0);
+  const [saving, setSaving] = useState(false);
+  const [elementLocks] = useState({ ...EMPTY_ELEMENT_LOCKS });
+  const pollId = useRef(0);
+
+  const worktreeReady = Boolean(
+    repoKind === "device" && localPath && worktreeBranch
+  );
+  const bibleReady = ["found", "upload", "template"].includes(bibleSource);
+  const canSave = Boolean(name.trim() && worktreeReady && bibleReady && !saving);
 
   useEffect(() => {
     function onKey(event) {
@@ -36,98 +40,127 @@ export default function NewProjectModal({ onClose, onSave }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  async function runDiscover(opts) {
-    const id = ++discoverId.current;
+  async function pollBible(folder) {
+    const id = ++pollId.current;
     setBusy(true);
-    setTokenError("");
+    setBibleError("");
     try {
-      const result = await discoverTokens(opts);
-      if (id !== discoverId.current) return;
-      if (result.empty) {
-        setTokenFile("");
-        setColorsByTheme(EMPTY_THEMES);
-        setTokenError("No color token file found. Add one, or save with empty tokens.");
+      const found = await findBible(folder);
+      if (id !== pollId.current) return;
+      if (found.found) {
+        setBibleSource("found");
+        setBibleDisplay(found.designMd);
+        setBiblePaths(found);
+        setTokenFile(found.tokensCss || found.designMd);
         return;
       }
-      setTokenFile(result.path || "");
-      setColorsByTheme(result.themes);
-      setTheme("dark");
-      setTokenLocks(defaultTokenLocks(result.themes.dark || {}));
+      setBibleSource("");
+      setBibleDisplay("");
+      setBiblePaths(found);
+      setTokenFile("");
     } catch (error) {
-      if (id !== discoverId.current) return;
-      setTokenError(error.message);
+      if (id !== pollId.current) return;
+      setBibleError(error.message);
+      setBibleSource("");
+      setBibleDisplay("");
     } finally {
-      if (id === discoverId.current) setBusy(false);
+      if (id === pollId.current) setBusy(false);
     }
   }
 
-  function onRepoChange({ kind, githubUrl: url, localPath: folder }) {
+  function onRepoChange({
+    kind,
+    githubUrl: url,
+    localPath: folder,
+    sourcePath: source,
+    worktreeBranch: branch,
+    worktreeBase: base,
+  }) {
     setRepoKind(kind);
     setGithubUrl(url);
     setLocalPath(folder);
+    setSourcePath(source || "");
+    setWorktreeBranch(branch || "");
+    setWorktreeBase(base || "");
     if (kind === "github") {
       const parsed = parseGithubUrl(url);
       if (parsed && !name.trim()) setName(parsed.repo);
     }
-    if (kind === "device" && folder) {
-      setTokenFile("");
-      runDiscover({ kind, localPath: folder, githubUrl: url, tokenFile: "" });
+    if (kind === "device" && folder && branch) {
+      pollBible(folder);
+      return;
     }
+    setBibleSource("");
+    setBibleDisplay("");
+    setBiblePaths(null);
+    setUploadPath("");
+    setTokenFile("");
+    setBibleError("");
   }
 
   function onFolderName(folderName) {
     if (!name.trim()) setName(folderName);
   }
 
-  useEffect(() => {
-    if (repoKind !== "github") return;
-    if (!parseGithubUrl(githubUrl)) return;
-    const timer = setTimeout(() => {
-      setTokenFile("");
-      runDiscover({
-        kind: "github",
-        githubUrl,
+  function onUpload(filePath) {
+    setBibleSource("upload");
+    setUploadPath(filePath);
+    setBibleDisplay(filePath);
+    setBibleError("");
+  }
+
+  function onTemplate() {
+    setBibleSource("template");
+    setUploadPath("");
+    setBibleDisplay("Playground template");
+    setBibleError("");
+  }
+
+  async function save() {
+    if (!canSave) return;
+    setSaving(true);
+    setBibleError("");
+    try {
+      const result = await bootstrapBible({
         localPath,
-        tokenFile: "",
+        name: name.trim(),
+        source: bibleSource,
+        uploadPath,
+        designMd: biblePaths?.designMd,
+        tokensCss: biblePaths?.tokensCss,
+        componentsMd: biblePaths?.componentsMd,
       });
-    }, 600);
-    return () => clearTimeout(timer);
-  }, [repoKind, githubUrl]);
-
-  function onTokenFile(filePath) {
-    setTokenFile(filePath);
-    runDiscover({
-      kind: repoKind,
-      githubUrl,
-      localPath,
-      tokenFile: filePath,
-    });
+      onSave({
+        name: name.trim(),
+        repoKind: "device",
+        githubUrl: githubUrl.trim(),
+        localPath: localPath.trim(),
+        sourcePath: sourcePath.trim(),
+        worktreeBranch,
+        worktreeBase,
+        tokenFile: result.tokensCss || result.designMd || tokenFile,
+        tokenSource: result.tokensCss || result.designMd || tokenFile || null,
+        colorsByTheme: EMPTY_THEMES,
+        colors: {},
+        theme: "dark",
+        tokenLocks: defaultTokenLocks({}),
+        elementLocks,
+        bible: {
+          designMd: result.designMd || result.paths?.designMd || "docs/DESIGN.md",
+          tokensCss:
+            result.tokensCss || result.paths?.tokensCss || "src/styles/tokens.css",
+          componentsMd:
+            result.componentsMd ||
+            result.paths?.componentsMd ||
+            "docs/COMPONENTS.md",
+          claudeMd: result.paths?.claudeMd || "CLAUDE.md",
+        },
+      });
+    } catch (error) {
+      setBibleError(error.message);
+      setSaving(false);
+    }
   }
-
-  function save() {
-    if (!name.trim()) return;
-    onSave({
-      name: name.trim(),
-      repoKind: repoKind || "github",
-      githubUrl: githubUrl.trim(),
-      localPath: localPath.trim(),
-      tokenFile,
-      tokenSource: tokenFile || null,
-      colorsByTheme,
-      colors: colorsByTheme[theme] || colorsByTheme.dark,
-      theme,
-      tokenLocks,
-      elementLocks,
-      componentLibrary,
-    });
-  }
-
-  const draft = {
-    theme,
-    colorsByTheme,
-    colors: colorsByTheme[theme] || {},
-    tokenLocks,
-  };
 
   return (
     <div className="overlay" onClick={onClose} role="presentation">
@@ -159,38 +192,29 @@ export default function NewProjectModal({ onClose, onSave }) {
             kind={repoKind}
             githubUrl={githubUrl}
             localPath={localPath}
+            sourcePath={sourcePath}
+            worktreeBranch={worktreeBranch}
+            worktreeBase={worktreeBase}
             onChange={onRepoChange}
             onFolderName={onFolderName}
           />
 
-          {repoKind ? (
-            <>
-              <TokenFileField
-                value={tokenFile}
-                error={tokenError}
-                onPicked={onTokenFile}
-              />
-              {busy ? <p className="muted">Looking for a color token file…</p> : null}
-            </>
+          {worktreeReady ? (
+            <DesignBibleField
+              display={bibleDisplay}
+              source={bibleSource}
+              error={bibleError}
+              busy={busy}
+              onUpload={onUpload}
+              onTemplate={onTemplate}
+            />
           ) : (
             <p className="muted">
-              Choose Device to pick a local repo, or GitHub to paste a public repo URL.
-              A token file is detected automatically.
+              Choose Device to pick a local repo. If it has no playground
+              worktree, you can create one, then upload a bible or add the
+              playground template.
             </p>
           )}
-
-          <TokenGrid
-            project={draft}
-            onThemeChange={setTheme}
-            onToggleLock={(key) =>
-              setTokenLocks((current) => ({ ...current, [key]: !current[key] }))
-            }
-          />
-
-          <ComponentLibraryField
-            value={componentLibrary}
-            onChange={setComponentLibrary}
-          />
         </div>
         <div className="modal-foot">
           <button type="button" className="btn btn-ghost" onClick={onClose}>
@@ -200,9 +224,9 @@ export default function NewProjectModal({ onClose, onSave }) {
             type="button"
             className="btn btn-primary"
             onClick={save}
-            disabled={!name.trim()}
+            disabled={!canSave}
           >
-            Save project
+            {saving ? "Saving…" : "Save project"}
           </button>
         </div>
       </div>

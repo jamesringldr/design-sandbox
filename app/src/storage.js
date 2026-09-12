@@ -15,6 +15,9 @@ export function normalizeProject(project) {
     slug: project.slug || slugify(project.name),
     githubUrl: project.githubUrl || "",
     localPath: project.localPath || "",
+    sourcePath: project.sourcePath || "",
+    worktreeBranch: project.worktreeBranch || "",
+    worktreeBase: project.worktreeBase || "",
     repoKind:
       project.repoKind ||
       (project.localPath && !project.githubUrl ? "device" : "github"),
@@ -105,6 +108,9 @@ export function createProject(draft) {
     repoKind: draft.repoKind || "github",
     githubUrl: (draft.githubUrl || "").trim(),
     localPath: (draft.localPath || "").trim(),
+    sourcePath: (draft.sourcePath || "").trim(),
+    worktreeBranch: draft.worktreeBranch || "",
+    worktreeBase: draft.worktreeBase || "",
     tokenFile: draft.tokenFile || draft.tokenSource || "",
     tokenSource: draft.tokenFile || draft.tokenSource || null,
     colorsByTheme: draft.colorsByTheme,
@@ -115,5 +121,6 @@ export function createProject(draft) {
     componentLibrary: draft.componentLibrary || "",
     artifacts: [],
     routes: [],
+    bible: draft.bible,
   });
 }

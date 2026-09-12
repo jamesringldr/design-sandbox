@@ -476,6 +476,18 @@ select.input {
   align-items: stretch;
 }
 
+.path-row .btn {
+  flex-shrink: 0;
+}
+
+.confirm-prompt {
+  margin: 0;
+  color: var(--tool-danger);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
 .path-display {
   flex: 1;
   min-width: 0;
@@ -488,6 +500,19 @@ select.input {
   font-size: 12px;
   line-height: 1.4;
   word-break: break-all;
+}
+
+.path-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--tool-muted);
+}
+
+.path-note code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--tool-text);
 }
 
 .muted {
@@ -533,6 +558,10 @@ select.input {
   justify-content: center;
   z-index: 50;
   padding: 24px;
+}
+
+.overlay.stacked {
+  z-index: 60;
 }
 
 .modal {

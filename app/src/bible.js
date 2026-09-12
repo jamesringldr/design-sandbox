@@ -56,8 +56,41 @@ export function assertSafeBibleTarget(rel) {
   return clean;
 }
 
+export const BIBLE_DESIGN_CANDIDATES = [
+  "docs/DESIGN.md",
+  "DESIGN.md",
+  "docs/design.md",
+  "design.md",
+];
+
+export const BIBLE_COMPONENT_CANDIDATES = [
+  "docs/COMPONENTS.md",
+  "COMPONENTS.md",
+];
+
+export const BIBLE_TOKEN_CANDIDATES = [
+  "src/styles/tokens.css",
+  "packages/ui/src/styles/tokens.css",
+  "styles/tokens.css",
+  "tokens.css",
+];
+
 export function generateTokensCss(tokens) {
   return generateThemeCss(tokens);
+}
+
+export function generateComponentsMd(project) {
+  const name = project?.name || "Project";
+  return [
+    `# ${name} components`,
+    "",
+    "Playground template. Catalog adopted primitives here as they land.",
+    "",
+    "| Name | Import | Variants | When to use | When not to use |",
+    "|---|---|---|---|---|",
+    "| _none yet_ | — | — | — | — |",
+    "",
+  ].join("\n");
 }
 
 export function claudeDesignSection(paths) {

@@ -90,7 +90,7 @@ export default function App() {
     const project = createProject(draft);
     setProjects((current) => [...current, project]);
     setActiveId(project.id);
-    setTab("styleguide");
+    setTab("settings");
     setCreating(false);
   }
 

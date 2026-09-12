@@ -282,6 +282,37 @@ If those three work, v1 is done. Everything else is expansion.
 
 ---
 
+## Repo connect: staging worktree (2026-09-12)
+
+Current law for how a playground project attaches to an app. This supersedes the earlier "v1 does not iframe / no repo connect" line for the Live visualizer.
+
+Do not clone the app into design-sandbox. Do not use the primary checkout as `localPath`, even if that checkout is already on `staging`. Git cannot check out `staging` in two worktrees; the playground tree is a **new branch based on staging**.
+
+### Jobs
+
+| Job | Where |
+|---|---|
+| Playground project files (locks, routes, screenshots) | `data/projects/<slug>/` in this repo |
+| Live app + bible writes (`DESIGN.md`, `tokens.css` / `theme.css`) | The staging-based design worktree |
+| Merge | `dev/design-playground` → staging through the normal git flow |
+| Daily feature work | Other worktrees, never this one |
+
+### Rules
+
+1. **One design worktree per app** (keyed by the repo's main checkout). Branch: `dev/design-playground`. Folder: a sibling named `{repo}-design-playground` (lowercased repo folder). Reuse if that branch already has a worktree.
+2. Device connect picks a folder, then inspects for `dev/design-playground`. If none exists, ask **No Playground Worktree for this repo** with red **Upload or Add Template**, buttons **Yes** / **Change Repo**. Yes creates the worktree from staging, then polls for a design bible (`docs/DESIGN.md`, not `theme.css`). Change Repo clears the repo field and returns to New project. After the worktree exists, Design Bible is **Upload** or **+ Template** (playground-owned stub). Save is enabled once name + worktree + bible source are set. Save writes the bible if needed, commits in the worktree, creates the playground project, and opens Project Settings.
+3. GitHub URL alone does not create a worktree. Attach a Device folder when Live / bible writes are needed.
+4. Save writes bible files into the worktree. Frontend code changes, if any, happen there too, then merge to staging.
+5. Do not commit preview scaffolding (extra auth bypass, dummy profiles, playground env). Auth bypass stays the app's existing localhost flag. Dummy data stays playground-owned or gitignored.
+6. Close the playground project before other worktrees take the bible. Recreate or reuse from latest staging the next time the project opens; do not keep two design worktrees for the same app.
+7. The playground repo itself is not a valid connect target.
+
+### What this is not
+
+A clone inside design-sandbox, a worktree of `staging` itself, or design-mode bolted onto whichever folder was already open.
+
+---
+
 ## Open Questions
 
 - [x] Type seed: `design.md` sizes. If they feel small, edit in the playground later.

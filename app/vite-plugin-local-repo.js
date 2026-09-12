@@ -24,20 +24,32 @@ import {
   TOKEN_PATHS,
 } from "./src/tokenPaths.js";
 import { startDevServer, stopDevServer, devServerStatus } from "./src/devServer.js";
+import {
+  bootstrapBible,
+  ensureDesignWorktree,
+  findBiblePresence,
+  findDesignWorktree,
+  isInside,
+  isMainWorkingTree,
+  worktreeNeedsInstall,
+} from "./src/designWorktree.js";
 import { extractThemes, themesEmpty } from "./src/tokens.js";
 
 const execFileAsync = promisify(execFile);
-const DATA_ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "../data"
-);
+const APP_DIR = path.dirname(fileURLToPath(import.meta.url));
+const PLAYGROUND_ROOT = path.resolve(APP_DIR, "..");
+const DATA_ROOT = path.resolve(APP_DIR, "../data");
 const ROUTES = new Set([
   "/api/select-folder",
   "/api/select-file",
   "/api/read-tokens",
+  "/api/design-worktree",
+  "/api/design-worktree/inspect",
   "/api/load",
   "/api/save",
   "/api/bible-status",
+  "/api/bible-find",
+  "/api/bible-bootstrap",
   "/api/bible-integrate",
   "/api/dev-server/start",
   "/api/dev-server/stop",
@@ -118,6 +130,30 @@ async function writeJson(file, value) {
   await writeFileAtomic(file, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+async function retargetMainCheckout(meta, slug) {
+  if (!meta?.localPath) return meta;
+  const onMain = await isMainWorkingTree(meta.localPath);
+  if (!onMain) return meta;
+  const worktree = await findDesignWorktree(meta.localPath, {
+    forbiddenRoots: [PLAYGROUND_ROOT],
+  });
+  if (!worktree.exists) return meta;
+  const next = {
+    ...meta,
+    slug,
+    localPath: worktree.localPath,
+    sourcePath: worktree.sourcePath,
+    worktreeBranch: worktree.branch,
+    worktreeBase: worktree.base,
+    needsInstall: worktree.needsInstall,
+  };
+  await writeJson(
+    path.join(DATA_ROOT, "projects", slug, "project.json"),
+    projectMeta(next, slug)
+  );
+  return next;
+}
+
 async function loadPlayground() {
   const index = await readJson(path.join(DATA_ROOT, "playground.json"));
   if (!index) return { projects: [], activeId: null };
@@ -129,10 +165,20 @@ async function loadPlayground() {
     const meta = await readJson(path.join(dir, "project.json"));
     const tokens = await readJson(path.join(dir, "tokens.json"));
     if (!meta) continue;
+    let resolved = meta;
+    try {
+      resolved = await retargetMainCheckout(meta, slug);
+    } catch {
+      resolved = meta;
+    }
+    const needsInstall = resolved.localPath
+      ? await worktreeNeedsInstall(resolved.localPath)
+      : false;
     projects.push({
-      ...meta,
+      ...resolved,
       slug,
       colorsByTheme: tokens || { light: {}, dark: {} },
+      needsInstall,
     });
   }
   return { projects, activeId: index.activeId ?? null };
@@ -283,6 +329,32 @@ export default function localRepoPlugin() {
             return;
           }
 
+          if (req.method === "POST" && url === "/api/design-worktree/inspect") {
+            const body = await readJsonBody(req);
+            if (!body.path || typeof body.path !== "string") {
+              send(res, 400, { error: "Missing folder path." });
+              return;
+            }
+            const found = await findDesignWorktree(body.path, {
+              forbiddenRoots: [PLAYGROUND_ROOT],
+            });
+            send(res, 200, found);
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/design-worktree") {
+            const body = await readJsonBody(req);
+            if (!body.path || typeof body.path !== "string") {
+              send(res, 400, { error: "Missing folder path." });
+              return;
+            }
+            const worktree = await ensureDesignWorktree(body.path, {
+              forbiddenRoots: [PLAYGROUND_ROOT],
+            });
+            send(res, 200, worktree);
+            return;
+          }
+
           if (req.method === "GET" && url === "/api/load") {
             const data = await loadPlayground();
             send(res, 200, data);
@@ -324,6 +396,49 @@ export default function localRepoPlugin() {
               localPath: body.localPath,
               previewUrl: body.previewUrl,
               logDir: path.join(DATA_ROOT, "dev-logs"),
+            });
+            send(res, 200, result);
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/bible-find") {
+            const body = await readJsonBody(req);
+            if (!body.localPath || typeof body.localPath !== "string") {
+              send(res, 400, { error: "A local folder is required." });
+              return;
+            }
+            const root = path.resolve(body.localPath);
+            if (isInside(PLAYGROUND_ROOT, root)) {
+              send(res, 400, { error: "That folder is the playground itself." });
+              return;
+            }
+            const stat = await fs.stat(root).catch(() => null);
+            if (!stat?.isDirectory()) {
+              send(res, 400, { error: "That path is not a folder." });
+              return;
+            }
+            send(res, 200, await findBiblePresence(root));
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/bible-bootstrap") {
+            const body = await readJsonBody(req);
+            if (!body.localPath || typeof body.localPath !== "string") {
+              send(res, 400, { error: "A local folder is required." });
+              return;
+            }
+            const root = path.resolve(body.localPath);
+            if (isInside(PLAYGROUND_ROOT, root)) {
+              send(res, 400, { error: "That folder is the playground itself." });
+              return;
+            }
+            const result = await bootstrapBible(root, {
+              source: body.source,
+              name: body.name,
+              uploadPath: body.uploadPath,
+              designMd: body.designMd,
+              tokensCss: body.tokensCss,
+              componentsMd: body.componentsMd,
             });
             send(res, 200, result);
             return;

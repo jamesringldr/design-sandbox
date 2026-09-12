@@ -1,16 +1,11 @@
 {
   "version": 1,
-  "activeId": "09f6a9a9-b962-4022-98fd-aad01f5b45ee",
+  "activeId": "3402de5d-e7ff-4eb0-85e4-cd2e707f20f8",
   "projects": [
     {
-      "id": "09f6a9a9-b962-4022-98fd-aad01f5b45ee",
-      "slug": "vanyshr-mono",
-      "name": "Vanyshr-mono"
-    },
-    {
-      "id": "14650d89-299a-4b09-ad24-28f0efc3c6e0",
+      "id": "3402de5d-e7ff-4eb0-85e4-cd2e707f20f8",
       "slug": "vanyshr",
-      "name": "vanyshr"
+      "name": "Vanyshr"
     }
   ]
 }

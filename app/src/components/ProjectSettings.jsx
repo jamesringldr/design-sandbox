@@ -30,6 +30,7 @@ function keepLockedColors(current, incoming, locks) {
 export default function ProjectSettings({ project, onUpdate, onRemove }) {
   const [refreshing, setRefreshing] = useState(false);
   const prevRepo = useRef({
+    id: project.id,
     path: project.localPath,
     url: project.githubUrl,
     kind: project.repoKind,
@@ -104,11 +105,14 @@ export default function ProjectSettings({ project, onUpdate, onRemove }) {
 
   useEffect(() => {
     const prev = prevRepo.current;
+    const switchedProject = prev.id !== project.id;
     const changed =
-      prev.path !== project.localPath ||
-      prev.url !== project.githubUrl ||
-      prev.kind !== project.repoKind;
+      !switchedProject &&
+      (prev.path !== project.localPath ||
+        prev.url !== project.githubUrl ||
+        prev.kind !== project.repoKind);
     prevRepo.current = {
+      id: project.id,
       path: project.localPath,
       url: project.githubUrl,
       kind: project.repoKind,
@@ -176,9 +180,27 @@ export default function ProjectSettings({ project, onUpdate, onRemove }) {
           kind={project.repoKind || "github"}
           githubUrl={project.githubUrl || ""}
           localPath={project.localPath || ""}
+          sourcePath={project.sourcePath || ""}
+          worktreeBranch={project.worktreeBranch || ""}
+          worktreeBase={project.worktreeBase || ""}
+          needsInstall={Boolean(project.needsInstall)}
           inputId="settings-github"
-          onChange={({ kind, githubUrl, localPath }) =>
-            patch({ repoKind: kind, githubUrl, localPath })
+          onChange={({
+            kind,
+            githubUrl,
+            localPath,
+            sourcePath,
+            worktreeBranch,
+            worktreeBase,
+          }) =>
+            patch({
+              repoKind: kind,
+              githubUrl,
+              localPath,
+              sourcePath,
+              worktreeBranch,
+              worktreeBase,
+            })
           }
         />
         <TokenFileField
