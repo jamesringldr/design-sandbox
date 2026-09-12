@@ -9,20 +9,22 @@ export default function ConfirmModal({
   cancelLabel = "Cancel",
   onCancel,
   onConfirm,
+  onDismiss,
   danger = true,
 }) {
+  const dismiss = onDismiss || onCancel;
   useEffect(() => {
     function onKey(event) {
       if (event.key !== "Escape") return;
       event.stopImmediatePropagation();
-      onCancel();
+      dismiss();
     }
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [onCancel]);
+  }, [dismiss]);
 
   return createPortal(
-    <div className="overlay stacked" onClick={onCancel} role="presentation">
+    <div className="overlay stacked" onClick={dismiss} role="presentation">
       <div
         className="modal narrow"
         role="dialog"

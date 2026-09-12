@@ -439,6 +439,7 @@ export default function localRepoPlugin() {
               designMd: body.designMd,
               tokensCss: body.tokensCss,
               componentsMd: body.componentsMd,
+              existing: body.existing,
             });
             send(res, 200, result);
             return;

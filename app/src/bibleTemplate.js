@@ -7,7 +7,7 @@ import {
 
 export function playgroundBibleTemplate(project) {
   const paths = defaultBiblePaths(project);
-  const tokens = { light: {}, dark: {} };
+  const tokens = project.colorsByTheme || { light: {}, dark: {} };
   const named = {
     name: project.name || "Untitled",
     componentLibrary: project.componentLibrary || "unset",

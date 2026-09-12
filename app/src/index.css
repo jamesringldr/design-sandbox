@@ -626,6 +626,47 @@ select.input {
   gap: 8px;
 }
 
+.core-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.core-row {
+  display: grid;
+  grid-template-columns: 22px 168px 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--tool-border);
+}
+
+.core-row.core-head {
+  padding-bottom: 8px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--tool-muted);
+  border-bottom-color: var(--tool-border-strong);
+}
+
+.core-row code {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--tool-text);
+  word-break: break-all;
+}
+
+.core-controls {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--tool-muted);
+}
+
+.core-table.compact .core-row {
+  padding: 8px 0;
+}
+
 .swatch-grid {
   display: flex;
   flex-wrap: nowrap;

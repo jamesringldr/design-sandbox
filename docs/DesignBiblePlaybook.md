@@ -81,13 +81,12 @@ Write for agents, not humans. Rules stated as rules, not suggestions. This exact
 section order, every time. §0–§11 are required for every project; §12 is optional
 and appears only when the product actually has bespoke, non-tokenizable effects.
 
-**Headers are literal, not paraphrased.** Every project's DESIGN.md uses the exact
-`## §N — Title` heading text given below (e.g. `## §2 — Color Tokens`) — not a
-project-specific rename like `## Color Palette`, even when the rename reads more
-naturally for that product. The whole point of this playbook is a format that's
-identical and machine-checkable across every project; prose section names will
-always drift project to project, and a tool checking for completeness (or an agent
-skimming for §0) needs to match on something exact, not guess at a paraphrase.
+**Headers are literal, not paraphrased.** Every project's DESIGN.md uses
+`## {n} {Title}` as defined in `docs/bible-language.md` (e.g. `## 2 Color`) —
+not `## §2 — Color Tokens` and not a project-specific rename like
+`## Color Palette`. The format is identical and machine-checkable across every
+project; a tool checking for completeness (or an agent skimming for 0 Quick
+Reference) matches on the number + title, not a paraphrase.
 Content specific to one project that has no numbered slot (e.g. a "Component rules"
 list of do's/don'ts for this product's buttons) can still exist as an unnumbered
 section — it's paraphrasing an *actual* numbered section that's not allowed.

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { parseGithubUrl } from "../github.js";
 import { bootstrapBible, findBible } from "../repo.js";
 import { defaultTokenLocks, EMPTY_ELEMENT_LOCKS } from "../tokens.js";
+import ConfirmModal from "./ConfirmModal.jsx";
 import DesignBibleField from "./DesignBibleField.jsx";
 import RepoSource from "./RepoSource.jsx";
 
@@ -23,13 +24,16 @@ export default function NewProjectModal({ onClose, onSave }) {
   const [bibleError, setBibleError] = useState("");
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [pendingTemplate, setPendingTemplate] = useState(false);
   const [elementLocks] = useState({ ...EMPTY_ELEMENT_LOCKS });
   const pollId = useRef(0);
 
   const worktreeReady = Boolean(
     repoKind === "device" && localPath && worktreeBranch
   );
-  const bibleReady = ["found", "upload", "template"].includes(bibleSource);
+  const bibleReady = ["found", "upload", "template", "template-integrate"].includes(
+    bibleSource
+  );
   const canSave = Boolean(name.trim() && worktreeReady && bibleReady && !saving);
 
   useEffect(() => {
@@ -47,16 +51,15 @@ export default function NewProjectModal({ onClose, onSave }) {
     try {
       const found = await findBible(folder);
       if (id !== pollId.current) return;
+      setBiblePaths(found);
       if (found.found) {
         setBibleSource("found");
         setBibleDisplay(found.designMd);
-        setBiblePaths(found);
         setTokenFile(found.tokensCss || found.designMd);
         return;
       }
       setBibleSource("");
-      setBibleDisplay("");
-      setBiblePaths(found);
+      setBibleDisplay("Un-Committed");
       setTokenFile("");
     } catch (error) {
       if (id !== pollId.current) return;
@@ -96,6 +99,7 @@ export default function NewProjectModal({ onClose, onSave }) {
     setUploadPath("");
     setTokenFile("");
     setBibleError("");
+    setPendingTemplate(false);
   }
 
   function onFolderName(folderName) {
@@ -105,15 +109,30 @@ export default function NewProjectModal({ onClose, onSave }) {
   function onUpload(filePath) {
     setBibleSource("upload");
     setUploadPath(filePath);
-    setBibleDisplay(filePath);
+    setBibleDisplay(`Un-Committed · ${filePath}`);
     setBibleError("");
   }
 
-  function onTemplate() {
-    setBibleSource("template");
+  function applyTemplate(mode) {
+    setPendingTemplate(false);
     setUploadPath("");
-    setBibleDisplay("Playground template");
     setBibleError("");
+    if (mode === "integrate") {
+      const from = biblePaths?.existing?.[0] || "existing files";
+      setBibleSource("template-integrate");
+      setBibleDisplay(`Un-Committed · Integrating ${from}`);
+      return;
+    }
+    setBibleSource("template");
+    setBibleDisplay("Un-Committed · Playground template");
+  }
+
+  function onTemplate() {
+    if (biblePaths?.hasExistingDesign) {
+      setPendingTemplate(true);
+      return;
+    }
+    applyTemplate("fresh");
   }
 
   async function save() {
@@ -129,6 +148,7 @@ export default function NewProjectModal({ onClose, onSave }) {
         designMd: biblePaths?.designMd,
         tokensCss: biblePaths?.tokensCss,
         componentsMd: biblePaths?.componentsMd,
+        existing: biblePaths?.existing,
       });
       onSave({
         name: name.trim(),
@@ -215,6 +235,18 @@ export default function NewProjectModal({ onClose, onSave }) {
               playground template.
             </p>
           )}
+          {pendingTemplate ? (
+            <ConfirmModal
+              title="Existing design found"
+              body={`This repo already has design files (${(biblePaths?.existing || []).join(", ")}). Integrate them into the bible, or start fresh with an empty skeleton?`}
+              confirmLabel="Start fresh"
+              cancelLabel="Integrate existing"
+              danger={false}
+              onConfirm={() => applyTemplate("fresh")}
+              onCancel={() => applyTemplate("integrate")}
+              onDismiss={() => setPendingTemplate(false)}
+            />
+          ) : null}
         </div>
         <div className="modal-foot">
           <button type="button" className="btn btn-ghost" onClick={onClose}>

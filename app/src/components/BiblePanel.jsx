@@ -5,7 +5,7 @@ import ConfirmModal from "./ConfirmModal.jsx";
 const STATE_LABEL = {
   ok: "Ready",
   filled: "Ready",
-  missing: "Missing",
+  missing: "Un-Committed",
   stub: "Stub",
   partial: "Partial",
   mismatch: "Mismatch",
@@ -103,9 +103,9 @@ export default function BiblePanel({ project, onUpdate }) {
           {project.name}
         </h2>
         <p className="muted">
-          Playbook files in the connected repo. §0–§11 are required; §12 Bespoke
-          Effects is optional. Integrate writes DESIGN.md and tokens.css — it will
-          not touch theme.css.
+          Playbook files in the connected repo. 0–11 are required; 12 Effects is
+          optional. Integrate writes DESIGN.md and tokens.css — it will not touch
+          theme.css.
         </p>
       </div>
 
@@ -169,7 +169,7 @@ export default function BiblePanel({ project, onUpdate }) {
                       <div className="bible-row bible-row-section" key={section.id}>
                         <div>
                           <div className="bible-name">
-                            §{section.id} {section.title}
+                            {section.id} {section.title}
                             {section.optional ? (
                               <span className="bible-optional">optional</span>
                             ) : null}

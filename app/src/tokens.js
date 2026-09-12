@@ -1,3 +1,4 @@
+import { CORE_COLOR_TOKENS } from "./bibleLanguage.js";
 import { colorToHex } from "./colorMath.js";
 
 export const STARTER_COLORS = {
@@ -375,11 +376,10 @@ export function themesEmpty(themes) {
   return !themes || countColors(themes) === 0;
 }
 
-export function defaultTokenLocks(colors) {
+export function defaultTokenLocks(_colors) {
   const locks = {};
-  for (const token of DISPLAY_TOKENS) {
-    const resolved = token.aliases.find((alias) => colors?.[alias]);
-    locks[resolved || token.id] = false;
+  for (const token of CORE_COLOR_TOKENS) {
+    locks[token.id] = false;
   }
   return locks;
 }
@@ -442,6 +442,24 @@ export function canonicalColors(colors) {
     if (!out[guide.id]) {
       const value = pickAlias(out, guide.aliases);
       if (value) out[guide.id] = value;
+    }
+  }
+  const coreToChrome = [
+    ["color-primary", ["brand", "accent"]],
+    ["color-primary-on", ["onControlContrast"]],
+    ["color-secondary", ["brandHover", "brandSecondary"]],
+    ["color-bg-app", ["background"]],
+    ["color-bg-surface", ["surface"]],
+    ["color-text-primary", ["text"]],
+    ["color-text-secondary", ["textMuted"]],
+    ["color-border", ["border"]],
+    ["color-status-danger", ["destructive"]],
+  ];
+  for (const [core, chrome] of coreToChrome) {
+    const value = out[core];
+    if (!value) continue;
+    for (const key of chrome) {
+      if (!out[key]) out[key] = value;
     }
   }
   return out;

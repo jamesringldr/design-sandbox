@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { applyColors, resolveDisplayColors, themeColors } from "../tokens.js";
+import { resolveCoreColors } from "../bibleLanguage.js";
+import { applyColors, themeColors } from "../tokens.js";
 
 const TYPE_ROWS = [
   { role: "display", spec: "30 · 600 · -0.03em", sample: "Removals in progress", style: { fontSize: 30, fontWeight: 600, letterSpacing: "-0.03em", lineHeight: 1.05 } },
@@ -33,7 +34,7 @@ export default function StyleGuide({ project, onUpdate }) {
   const rootRef = useRef(null);
   const theme = project.theme === "light" ? "light" : "dark";
   const colors = themeColors(project);
-  const rows = resolveDisplayColors(colors);
+  const coreRows = resolveCoreColors(colors);
 
   useEffect(() => {
     applyColors(rootRef.current, colors);
@@ -79,13 +80,21 @@ export default function StyleGuide({ project, onUpdate }) {
 
       <div ref={rootRef} className="preview-root guide">
         <section className="guide-section">
-          <SectionHead n="01" title="Colorway" />
-          <div className="swatch-grid">
-            {rows.map((row) => (
-              <div className="swatch-card" key={row.id}>
-                <div className="block" style={{ background: row.value || "transparent" }} />
-                <div className="meta">{row.label}</div>
-                <div className="meta">{row.value || "—"}</div>
+          <SectionHead n="01" title="Core Colors" />
+          <div className="core-table">
+            <div className="core-row core-head">
+              <span />
+              <span>Seed token</span>
+              <span>What it controls</span>
+            </div>
+            {coreRows.map((row) => (
+              <div className="core-row" key={row.id}>
+                <span
+                  className="swatch"
+                  style={{ background: row.value || "transparent" }}
+                />
+                <code>{row.css}</code>
+                <span className="core-controls">{row.controls}</span>
               </div>
             ))}
           </div>

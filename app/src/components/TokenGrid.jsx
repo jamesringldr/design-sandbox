@@ -1,18 +1,16 @@
-import {
-  resolveDisplayColors,
-  themeColors,
-} from "../tokens.js";
+import { resolveCoreColors } from "../bibleLanguage.js";
+import { themeColors } from "../tokens.js";
 import LockIcon from "./LockIcon.jsx";
 
 export default function TokenGrid({ project, onThemeChange, onToggleLock }) {
   const theme = project.theme === "light" ? "light" : "dark";
   const colors = themeColors({ ...project, theme });
-  const rows = resolveDisplayColors(colors);
+  const rows = resolveCoreColors(colors);
 
   return (
     <div className="field">
       <div className="token-head">
-        <label>Color tokens</label>
+        <label>Core Colors</label>
         <div className="seg" role="group" aria-label="Color mode">
           <button
             type="button"
@@ -32,23 +30,30 @@ export default function TokenGrid({ project, onThemeChange, onToggleLock }) {
           </button>
         </div>
       </div>
-      <div className="token-list">
+      <div className="core-table compact">
+        <div className="core-row core-head">
+          <span />
+          <span>Seed token</span>
+          <span>What it controls</span>
+          {onToggleLock ? <span /> : null}
+        </div>
         {rows.map((row) => (
-          <div className="token-row" key={row.id}>
+          <div className="core-row" key={row.id}>
             <span
               className="swatch"
               style={{ background: row.value || "transparent" }}
             />
-            <span className="name">{row.label}</span>
+            <code>{row.css}</code>
+            <span className="core-controls">{row.controls}</span>
             {onToggleLock ? (
               <button
                 type="button"
-                className={`lock ${project.tokenLocks?.[row.key] ? "on" : ""}`}
-                aria-pressed={Boolean(project.tokenLocks?.[row.key])}
-                aria-label={`${project.tokenLocks?.[row.key] ? "Unlock" : "Lock"} ${row.label}`}
-                onClick={() => onToggleLock(row.key)}
+                className={`lock ${project.tokenLocks?.[row.id] ? "on" : ""}`}
+                aria-pressed={Boolean(project.tokenLocks?.[row.id])}
+                aria-label={`${project.tokenLocks?.[row.id] ? "Unlock" : "Lock"} ${row.seed}`}
+                onClick={() => onToggleLock(row.id)}
               >
-                <LockIcon locked={Boolean(project.tokenLocks?.[row.key])} />
+                <LockIcon locked={Boolean(project.tokenLocks?.[row.id])} />
               </button>
             ) : null}
           </div>

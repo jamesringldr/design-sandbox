@@ -8,7 +8,9 @@ import {
   BIBLE_DESIGN_CANDIDATES,
   BIBLE_TOKEN_CANDIDATES,
 } from "./bible.js";
+import { EXISTING_DESIGN_CANDIDATES, mapHarvestedColors } from "./bibleLanguage.js";
 import { playgroundBibleTemplate } from "./bibleTemplate.js";
+import { extractThemes } from "./tokens.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -289,8 +291,14 @@ export async function findBiblePresence(rootPath) {
   const designMd = await firstExisting(root, BIBLE_DESIGN_CANDIDATES);
   const componentsMd = await firstExisting(root, BIBLE_COMPONENT_CANDIDATES);
   const tokensCss = await firstExisting(root, BIBLE_TOKEN_CANDIDATES);
+  const existing = [];
+  for (const rel of EXISTING_DESIGN_CANDIDATES) {
+    if (await exists(path.join(root, rel))) existing.push(rel);
+  }
   return {
     found: Boolean(designMd),
+    hasExistingDesign: existing.length > 0,
+    existing,
     designMd,
     componentsMd,
     tokensCss,
@@ -318,10 +326,29 @@ export async function bootstrapBible(rootPath, options = {}) {
     claudeMd: "CLAUDE.md",
   };
 
-  if (source === "template") {
+  if (source === "template" || source === "template-integrate") {
+    let harvested = { light: {}, dark: {} };
+    if (source === "template-integrate") {
+      const harvestFrom =
+        options.uploadPath ||
+        (options.existing && options.existing[0]
+          ? path.join(root, options.existing[0])
+          : "");
+      const candidates = [
+        harvestFrom,
+        ...EXISTING_DESIGN_CANDIDATES.map((rel) => path.join(root, rel)),
+      ].filter(Boolean);
+      for (const file of candidates) {
+        const text = await fs.readFile(file, "utf8").catch(() => "");
+        if (!text) continue;
+        harvested = mapHarvestedColors(extractThemes(text, file));
+        if (Object.keys(harvested.dark).length) break;
+      }
+    }
     const template = playgroundBibleTemplate({
       name: options.name || "Untitled",
       tokenFile: paths.tokensCss,
+      colorsByTheme: harvested,
     });
     paths = template.paths;
     Object.assign(files, template.files);

@@ -24,11 +24,7 @@ export default function DesignBibleField({
 
   const label =
     display ||
-    (source === "template"
-      ? "Playground template"
-      : picking
-        ? "Choose a file…"
-        : "No design bible found");
+    (picking ? "Choose a file…" : "Un-Committed");
 
   return (
     <div className="field">

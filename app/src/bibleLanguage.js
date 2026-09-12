@@ -1,0 +1,321 @@
+/** Single design-bible language. Used by the template, DESIGN.md, and tokens.css. */
+
+export const BIBLE_SECTIONS = [
+  { id: "0", title: "Quick Reference" },
+  { id: "1", title: "Principles" },
+  { id: "2", title: "Color" },
+  { id: "3", title: "Type" },
+  { id: "4", title: "Space" },
+  { id: "5", title: "Layout" },
+  { id: "6", title: "Depth" },
+  { id: "7", title: "Motion" },
+  { id: "8", title: "Icons" },
+  { id: "9", title: "States" },
+  { id: "10", title: "Anti-patterns" },
+  { id: "11", title: "Components" },
+  { id: "12", title: "Effects", optional: true },
+];
+
+export function sectionHeading(id, title) {
+  return `## ${id} ${title}`;
+}
+
+export const COLOR_TOKENS = [
+  {
+    id: "color-primary",
+    group: "core",
+    seed: "color-primary",
+    controls:
+      "Main buttons, active tabs, key visual accents, selected states. Core brand identifier.",
+  },
+  {
+    id: "color-primary-on",
+    group: "core",
+    seed: "color-primary-on",
+    controls:
+      "Text and icons that sit on color-primary. Must hold contrast (usually white or dark navy).",
+  },
+  {
+    id: "color-secondary",
+    group: "core",
+    seed: "color-secondary",
+    controls:
+      "Secondary buttons, badge highlights, active indicators, subtle interactive elements.",
+  },
+  {
+    id: "color-accent",
+    group: "core",
+    seed: "color-accent",
+    controls:
+      "Used sparingly for high-interest callouts, feature highlights, or promo elements.",
+  },
+  {
+    id: "color-bg-app",
+    group: "core",
+    seed: "color-bg-app",
+    controls:
+      "Foundational canvas of the entire screen and viewport.",
+  },
+  {
+    id: "color-bg-surface",
+    group: "core",
+    seed: "color-bg-surface",
+    controls:
+      "Cards, modals, sidebars, and dropdowns. Depth against color-bg-app.",
+  },
+  {
+    id: "color-text-primary",
+    group: "core",
+    seed: "color-text-primary",
+    controls:
+      "Headings, main body text, primary icons. Overall contrast and feel.",
+  },
+  {
+    id: "color-text-secondary",
+    group: "core",
+    seed: "color-text-secondary",
+    controls:
+      "Captions, muted text, disabled labels, placeholder text.",
+  },
+  {
+    id: "color-border",
+    group: "core",
+    seed: "color-border",
+    controls:
+      "Card outlines, input borders, dividers. Soft vs sharp changes how dense the UI feels.",
+  },
+  {
+    id: "color-status-danger",
+    group: "core",
+    seed: "color-status-danger",
+    controls:
+      "Error states, destructive buttons, delete alerts. The main functional alarm color.",
+  },
+];
+
+export const CORE_COLOR_TOKENS = COLOR_TOKENS.filter((token) => token.group === "core");
+
+export const SPACE_TOKENS = [
+  { id: "space-1", value: "4px", use: "Tight icon gaps" },
+  { id: "space-2", value: "8px", use: "Control padding, inline gaps" },
+  { id: "space-3", value: "12px", use: "Compact stacks" },
+  { id: "space-4", value: "16px", use: "Panel padding, section gap" },
+  { id: "space-5", value: "24px", use: "Group separation" },
+  { id: "space-6", value: "32px", use: "Page-level blocks" },
+  { id: "space-8", value: "48px", use: "Major region gaps" },
+];
+
+export const RADIUS_TOKENS = [
+  { id: "radius-sm", value: "4px", use: "Chips, small fills" },
+  { id: "radius-md", value: "6px", use: "Inputs, buttons" },
+  { id: "radius-lg", value: "10px", use: "Panels, cards" },
+  { id: "radius-pill", value: "999px", use: "Pills, toggles, avatars" },
+];
+
+export const MOTION_TOKENS = [
+  { id: "duration-fast", value: "120ms", use: "Color, chip state" },
+  { id: "duration-normal", value: "200ms", use: "Panel open, tabs" },
+  { id: "duration-slow", value: "400ms", use: "Page-level reveal" },
+];
+
+export const TYPE_ROLES = [
+  { id: "display", size: "30px", weight: "600", use: "Hero / empty-state title" },
+  { id: "title", size: "22px", weight: "600", use: "Panel titles" },
+  { id: "heading", size: "15px", weight: "600", use: "Section heads" },
+  { id: "body", size: "14px", weight: "400", use: "Running copy" },
+  { id: "caption", size: "12px", weight: "400", use: "Helper text" },
+  { id: "label", size: "11px", weight: "500", use: "Field labels" },
+  { id: "data", size: "13px", weight: "500", use: "IDs, counts, timestamps" },
+];
+
+const HARVEST_ALIASES = {
+  "color-primary": [
+    "color-primary",
+    "colorPrimary",
+    "accent",
+    "brand",
+    "brandPrimary",
+    "colorBrand500",
+    "colorAccentPrimary",
+    "accentPrimary",
+    "colorBgBrandSolid",
+  ],
+  "color-primary-on": [
+    "color-primary-on",
+    "colorPrimaryOn",
+    "accentOn",
+    "onAccent",
+    "onControlContrast",
+    "brandInk",
+    "colorBrandInk",
+  ],
+  "color-secondary": [
+    "color-secondary",
+    "colorSecondary",
+    "brandSecondary",
+    "brandHover",
+    "colorBrand600",
+    "colorAccentHover",
+  ],
+  "color-accent": [
+    "color-accent",
+    "colorAccent",
+    "tertiary",
+    "colorTertiary",
+  ],
+  "color-bg-app": [
+    "color-bg-app",
+    "colorBgApp",
+    "bg",
+    "background",
+    "colorBgPrimary",
+    "colorBackground",
+    "colorGray950",
+    "bgPage",
+  ],
+  "color-bg-surface": [
+    "color-bg-surface",
+    "colorBgSurface",
+    "surface",
+    "card",
+    "colorBgSecondary",
+    "colorCard",
+    "bgSurface",
+  ],
+  "color-text-primary": [
+    "color-text-primary",
+    "colorTextPrimary",
+    "text",
+    "colorFgPrimary",
+    "colorGray50",
+  ],
+  "color-text-secondary": [
+    "color-text-secondary",
+    "colorTextSecondary",
+    "textMuted",
+    "colorFgSecondary",
+    "colorGray300",
+  ],
+  "color-border": [
+    "color-border",
+    "colorBorder",
+    "border",
+    "colorBorderPrimary",
+    "borderSubtle",
+  ],
+  "color-status-danger": [
+    "color-status-danger",
+    "colorStatusDanger",
+    "danger",
+    "destructive",
+    "error",
+    "colorError500",
+  ],
+};
+
+function lookup(colors, aliases) {
+  if (!colors) return "";
+  for (const alias of aliases) {
+    if (colors[alias]) return String(colors[alias]).trim();
+    const wanted = alias.toLowerCase();
+    for (const [key, value] of Object.entries(colors)) {
+      if (key.toLowerCase() === wanted && value) return String(value).trim();
+    }
+  }
+  return "";
+}
+
+export function mapHarvestedColors(themes) {
+  const darkIn = themes?.dark || themes?.colors || {};
+  const lightIn = themes?.light || {};
+  const dark = {};
+  const light = {};
+  for (const token of COLOR_TOKENS) {
+    const aliases = HARVEST_ALIASES[token.id] || [token.id];
+    const d = lookup(darkIn, aliases);
+    const l = lookup(lightIn, aliases);
+    if (d) dark[token.id] = d;
+    if (l) light[token.id] = l;
+  }
+  return { dark, light };
+}
+
+export function cssVar(id) {
+  return `--${id}`;
+}
+
+export function resolveCoreColors(colors) {
+  return CORE_COLOR_TOKENS.map((token) => {
+    const aliases = HARVEST_ALIASES[token.id] || [token.id];
+    const value = lookup(colors, aliases) || lookup(colors, [token.id, token.seed]);
+    return {
+      ...token,
+      css: cssVar(token.id),
+      value,
+    };
+  });
+}
+
+export function generateBibleTokensCss(tokens) {
+  const dark = tokens?.dark || {};
+  const light = tokens?.light || {};
+  const colorValue = (bag, token) =>
+    lookup(bag, HARVEST_ALIASES[token.id] || [token.id]) || bag[token.id] || "";
+  const colorLines = (bag) =>
+    COLOR_TOKENS.map((token) => {
+      const value = colorValue(bag, token);
+      return value ? `  ${cssVar(token.id)}: ${value};` : `  ${cssVar(token.id)}: ;`;
+    });
+  const typeLines = TYPE_ROLES.map(
+    (role) => `  --size-${role.id}: ${role.size};`
+  );
+  const lightColors = COLOR_TOKENS.filter((token) => colorValue(light, token));
+  const lightBlock =
+    lightColors.length === 0
+      ? ""
+      : [
+          "",
+          ".light {",
+          ...lightColors.map(
+            (token) => `  ${cssVar(token.id)}: ${colorValue(light, token)};`
+          ),
+          "}",
+          "",
+        ].join("\n");
+
+  return [
+    "/* Design bible tokens. Values are filled in the playground. Do not edit by hand. */",
+    "",
+    ":root {",
+    "  /* Color */",
+    ...colorLines(dark),
+    "  /* Space */",
+    ...SPACE_TOKENS.map((token) => `  ${cssVar(token.id)}: ${token.value};`),
+    "  /* Depth */",
+    ...RADIUS_TOKENS.map((token) => `  ${cssVar(token.id)}: ${token.value};`),
+    "  /* Motion */",
+    ...MOTION_TOKENS.map((token) => `  ${cssVar(token.id)}: ${token.value};`),
+    "  /* Type sizes */",
+    ...typeLines,
+    "}",
+    lightBlock,
+  ].join("\n");
+}
+
+export const EXISTING_DESIGN_CANDIDATES = [
+  "docs/DESIGN.md",
+  "DESIGN.md",
+  "docs/design.md",
+  "design.md",
+  "docs/COMPONENTS.md",
+  "src/styles/tokens.css",
+  "packages/ui/src/styles/tokens.css",
+  "tokens.css",
+  "packages/ui/src/styles/theme.css",
+  "src/styles/theme.css",
+  "theme.css",
+  "src/index.css",
+  "app/globals.css",
+  "src/app/globals.css",
+  "styles/globals.css",
+];
