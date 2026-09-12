@@ -1,13 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { normalizePreviewOrigin, previewFrameSrc } from "../previewUrl.js";
-import { applyColors, themeColors } from "../tokens.js";
+import { WIREFRAMES } from "../screens/index.js";
+import { applyColors, resolvePaintColors, STARTER_THEMES } from "../tokens.js";
+import ColorwayEditor from "./ColorwayEditor.jsx";
 
 const EDITORS = [
-  "Colorway",
-  "Libraries",
-  "Spacing",
-  "Elevation, Borders, Radius",
+  { id: "colorway", label: "Colorway" },
+  { id: "libraries", label: "Libraries" },
+  { id: "spacing", label: "Spacing" },
+  { id: "elevation", label: "Elevation, Borders, Radius" },
 ];
+
+function themeBags(project) {
+  return {
+    dark: resolvePaintColors(
+      project.colorsByTheme?.dark || project.colors || STARTER_THEMES.dark,
+      "dark"
+    ),
+    light: resolvePaintColors(
+      project.colorsByTheme?.light || STARTER_THEMES.light,
+      "light"
+    ),
+  };
+}
 
 const MOBILE_PRESETS = [
   { id: "iphone-15-pro-max", label: "iPhone 15 Pro Max", aspect: "430 / 932" },
@@ -30,21 +45,77 @@ function paintPreview(iframe, colors, theme) {
   doc.documentElement.classList.toggle("light", theme === "light");
 }
 
-function ViewScreen({ colors, aspect, variant }) {
+function parseAspect(aspect) {
+  const [w, h] = String(aspect)
+    .split("/")
+    .map((part) => Number(part.trim()));
+  if (!w || !h) return { width: 390, height: 844 };
+  return { width: w, height: h };
+}
+
+function PhoneStage({ aspect, children }) {
+  const stageRef = useRef(null);
+  const { width, height } = parseAspect(aspect);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return undefined;
+    const fit = () => {
+      const w = stage.clientWidth;
+      const h = stage.clientHeight;
+      if (!w || !h) return;
+      setScale(Math.min(w / width, h / height, 1));
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(stage);
+    return () => observer.disconnect();
+  }, [width, height]);
+
+  return (
+    <div ref={stageRef} className="viz-phone-stage">
+      <div
+        className="viz-phone-slot"
+        style={{ width: width * scale, height: height * scale }}
+      >
+        <div
+          className="viz-phone-scale"
+          style={{
+            width,
+            height,
+            transform: `scale(${scale})`,
+          }}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ViewScreen({ colors, theme, aspect, variant, children }) {
   const ref = useRef(null);
   useEffect(() => {
-    applyColors(ref.current, colors);
-  }, [colors]);
+    applyColors(ref.current, resolvePaintColors(colors, theme));
+  }, [colors, theme]);
+  const phone = variant === "phone" ? parseAspect(aspect) : null;
   return (
     <div
       ref={ref}
       className={`viz-screen viz-screen-${variant}`}
-      style={{ aspectRatio: aspect }}
-    />
+      style={
+        phone
+          ? { width: phone.width, height: phone.height }
+          : { aspectRatio: aspect }
+      }
+    >
+      {children}
+    </div>
   );
 }
 
-function PreviewFrame({ origin, route, colors, theme, aspect, variant }) {
+function PreviewFrame({ origin, route, colors, theme, aspect, variant, Wireframe }) {
   const ref = useRef(null);
   const src = previewFrameSrc(origin, route);
 
@@ -52,15 +123,29 @@ function PreviewFrame({ origin, route, colors, theme, aspect, variant }) {
     paintPreview(ref.current, colors, theme);
   }, [colors, theme]);
 
-  if (!src) {
-    return <ViewScreen colors={colors} aspect={aspect} variant={variant} />;
+  if (Wireframe) {
+    return (
+      <ViewScreen colors={colors} theme={theme} aspect={aspect} variant={variant}>
+        <Wireframe />
+      </ViewScreen>
+    );
   }
+
+  if (!src) {
+    return <ViewScreen colors={colors} theme={theme} aspect={aspect} variant={variant} />;
+  }
+
+  const phone = variant === "phone" ? parseAspect(aspect) : null;
 
   return (
     <iframe
       ref={ref}
       className={`viz-screen viz-screen-${variant}`}
-      style={{ aspectRatio: aspect }}
+      style={
+        phone
+          ? { width: phone.width, height: phone.height }
+          : { aspectRatio: aspect }
+      }
       src={src}
       title={route}
       sandbox="allow-scripts allow-same-origin allow-forms"
@@ -82,13 +167,28 @@ export default function Visualizer({ project, onUpdate }) {
   const [devError, setDevError] = useState("");
   const [devPort, setDevPort] = useState("");
   const [liveKey, setLiveKey] = useState(0);
+  const [previewSource, setPreviewSource] = useState("wireframe");
+  const [openEditor, setOpenEditor] = useState(null);
+  const [draftByTheme, setDraftByTheme] = useState(() => themeBags(project));
+  const [savedByTheme, setSavedByTheme] = useState(() => themeBags(project));
+  const [savingColors, setSavingColors] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const theme = project.theme === "light" ? "light" : "dark";
-  const colors = themeColors(project);
+  const colors = draftByTheme[theme];
   const previewOrigin = normalizePreviewOrigin(project.previewUrl);
   const presets = mode === "mobile" ? MOBILE_PRESETS : DESKTOP_PRESETS;
   const presetId = mode === "mobile" ? mobilePreset : desktopPreset;
   const preset = presets.find((item) => item.id === presetId) || presets[0];
   const active = routes.includes(selected) ? selected : routes[0] || "";
+  const Wireframe = WIREFRAMES[active];
+  const source = Wireframe && previewSource === "wireframe" ? "wireframe" : "live";
+
+  useEffect(() => {
+    const bags = themeBags(project);
+    setDraftByTheme(bags);
+    setSavedByTheme(bags);
+    setSaveError("");
+  }, [project.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -188,8 +288,45 @@ export default function Visualizer({ project, onUpdate }) {
     onUpdate({
       ...project,
       theme: next,
-      colors: project.colorsByTheme?.[next] || colors,
+      colors: project.colorsByTheme?.[next] || draftByTheme[next],
     });
+  }
+
+  function toggleLock(id) {
+    onUpdate({
+      ...project,
+      tokenLocks: {
+        ...project.tokenLocks,
+        [id]: !project.tokenLocks?.[id],
+      },
+    });
+  }
+
+  async function saveColors() {
+    setSavingColors(true);
+    setSaveError("");
+    const colorsByTheme = {
+      dark: { ...(project.colorsByTheme?.dark || {}), ...draftByTheme.dark },
+      light: { ...(project.colorsByTheme?.light || {}), ...draftByTheme.light },
+    };
+    for (const mode of ["dark", "light"]) {
+      if (colorsByTheme[mode].brand) {
+        colorsByTheme[mode].brandPrimary = colorsByTheme[mode].brand;
+      }
+      if (colorsByTheme[mode].brandHover) {
+        colorsByTheme[mode].brandSecondary = colorsByTheme[mode].brandHover;
+      }
+    }
+    onUpdate({
+      ...project,
+      colorsByTheme,
+      colors: colorsByTheme[theme],
+    });
+    setSavedByTheme({
+      dark: { ...draftByTheme.dark },
+      light: { ...draftByTheme.light },
+    });
+    setSavingColors(false);
   }
 
   function addRoute() {
@@ -253,21 +390,41 @@ export default function Visualizer({ project, onUpdate }) {
               onUpdate({ ...project, previewUrl: event.target.value })
             }
           />
-          <div className="seg viz-theme" role="group" aria-label="Color mode">
-            <button
-              type="button"
-              className={theme === "light" ? "on" : ""}
-              onClick={() => setTheme("light")}
-            >
-              Light
-            </button>
-            <button
-              type="button"
-              className={theme === "dark" ? "on" : ""}
-              onClick={() => setTheme("dark")}
-            >
-              Dark
-            </button>
+          <div className="viz-toolbar-end">
+            {Wireframe ? (
+              <div className="seg" role="group" aria-label="Preview source">
+                <button
+                  type="button"
+                  className={source === "wireframe" ? "on" : ""}
+                  onClick={() => setPreviewSource("wireframe")}
+                >
+                  Wireframe
+                </button>
+                <button
+                  type="button"
+                  className={source === "live" ? "on" : ""}
+                  onClick={() => setPreviewSource("live")}
+                >
+                  Live
+                </button>
+              </div>
+            ) : null}
+            <div className="seg viz-theme" role="group" aria-label="Color mode">
+              <button
+                type="button"
+                className={theme === "light" ? "on" : ""}
+                onClick={() => setTheme("light")}
+              >
+                Light
+              </button>
+              <button
+                type="button"
+                className={theme === "dark" ? "on" : ""}
+                onClick={() => setTheme("dark")}
+              >
+                Dark
+              </button>
+            </div>
           </div>
         </div>
 
@@ -351,7 +508,7 @@ export default function Visualizer({ project, onUpdate }) {
                   </div>
                 </div>
                 {mode === "mobile" ? (
-                  <div className="viz-phone-stage">
+                  <PhoneStage aspect={preset.aspect}>
                     <PreviewFrame
                       key={liveKey}
                       origin={previewOrigin}
@@ -360,8 +517,9 @@ export default function Visualizer({ project, onUpdate }) {
                       theme={theme}
                       aspect={preset.aspect}
                       variant="phone"
+                      Wireframe={source === "wireframe" ? Wireframe : null}
                     />
-                  </div>
+                  </PhoneStage>
                 ) : (
                   <PreviewFrame
                     key={liveKey}
@@ -371,6 +529,7 @@ export default function Visualizer({ project, onUpdate }) {
                     theme={theme}
                     aspect={preset.aspect}
                     variant="desktop"
+                    Wireframe={source === "wireframe" ? Wireframe : null}
                   />
                 )}
               </div>
@@ -381,11 +540,54 @@ export default function Visualizer({ project, onUpdate }) {
 
       <aside className="viz-editors" aria-label="Design elements">
         <div className="viz-editor-list">
-          {EDITORS.map((label) => (
-            <div className="viz-editor-slot" key={label}>
-              {label}
-            </div>
-          ))}
+          {EDITORS.map((editor) => {
+            const open = openEditor === editor.id;
+            return (
+              <div
+                className={`viz-acc${open ? " open" : ""}`}
+                key={editor.id}
+              >
+                <button
+                  type="button"
+                  className="viz-acc-head"
+                  aria-expanded={open}
+                  onClick={() =>
+                    setOpenEditor(open ? null : editor.id)
+                  }
+                >
+                  <span className="viz-acc-caret" aria-hidden="true">
+                    {open ? "▾" : "▸"}
+                  </span>
+                  {editor.label}
+                </button>
+                {open ? (
+                  <div className="viz-acc-body">
+                    {editor.id === "colorway" ? (
+                      <ColorwayEditor
+                        key={project.id}
+                        theme={theme}
+                        colors={colors}
+                        saved={savedByTheme[theme]}
+                        locks={project.tokenLocks || {}}
+                        onChange={(next) =>
+                          setDraftByTheme((current) => ({
+                            ...current,
+                            [theme]: next,
+                          }))
+                        }
+                        onToggleLock={toggleLock}
+                        onSave={saveColors}
+                        saving={savingColors}
+                        saveError={saveError}
+                      />
+                    ) : (
+                      <p className="muted">Not wired yet.</p>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
         <div className="viz-editors-foot">
           <p className="muted">

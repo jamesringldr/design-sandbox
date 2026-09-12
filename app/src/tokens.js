@@ -1,3 +1,5 @@
+import { colorToHex } from "./colorMath.js";
+
 export const STARTER_COLORS = {
   background: "#282828",
   surface: "#404040",
@@ -165,6 +167,21 @@ export function applyColors(element, colors) {
 
 export function isHex(value) {
   return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(value);
+}
+
+export function resolvePaintColors(colors, theme) {
+  const seed = theme === "light" ? STARTER_THEMES.light : STARTER_THEMES.dark;
+  const resolved = canonicalColors(colors);
+  const paint = { ...seed };
+  for (const [key, value] of Object.entries(resolved)) {
+    if (typeof value !== "string" || !looksLikeColor(value.trim())) continue;
+    paint[key] = colorToHex(value) || value.trim();
+  }
+  for (const [key, value] of Object.entries(paint)) {
+    const hex = colorToHex(value);
+    if (hex) paint[key] = hex;
+  }
+  return canonicalColors(paint);
 }
 
 function looksLikeColor(value) {

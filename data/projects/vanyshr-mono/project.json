@@ -5,8 +5,8 @@
   "repoKind": "device",
   "githubUrl": "",
   "localPath": "/Users/jameso/DevWork/vanyshr-stack/Vanyshr-mono/",
-  "tokenFile": "packages/ui/src/styles/globals.css",
-  "tokenSource": "packages/ui/src/styles/globals.css",
+  "tokenFile": "docs/DESIGN.md",
+  "tokenSource": "docs/DESIGN.md",
   "theme": "dark",
   "componentLibrary": "boardui",
   "tokenLocks": {

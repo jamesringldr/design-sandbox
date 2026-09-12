@@ -1,0 +1,35 @@
+{
+  "id": "14650d89-299a-4b09-ad24-28f0efc3c6e0",
+  "slug": "vanyshr",
+  "name": "vanyshr",
+  "repoKind": "device",
+  "githubUrl": "",
+  "localPath": "/Users/jameso/DevWork/vanyshr-stack/vanyshr-design-bible/",
+  "tokenFile": "packages/ui/src/styles/theme.css",
+  "tokenSource": "packages/ui/src/styles/theme.css",
+  "theme": "dark",
+  "componentLibrary": "boardui",
+  "tokenLocks": {
+    "colorBrand500": false,
+    "colorBrand600": false,
+    "colorBgPrimary": false,
+    "colorNavyHero": false,
+    "colorBgSecondary": false,
+    "colorBgTertiary": false
+  },
+  "elementLocks": {
+    "colors": false,
+    "typography": false,
+    "spacing": false,
+    "radius": false
+  },
+  "artifacts": [],
+  "routes": [],
+  "previewUrl": "",
+  "bible": {
+    "designMd": "docs/DESIGN.md",
+    "tokensCss": "/Users/jameso/DevWork/vanyshr-stack/vanyshr-design-bible/packages/ui/src/styles/tokens.css",
+    "componentsMd": "docs/COMPONENTS.md",
+    "claudeMd": "CLAUDE.md"
+  }
+}
