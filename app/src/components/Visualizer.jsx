@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { brandTokenId, isReservedTokenId, newBrandHex } from "../colorShuffle.js";
 import { rand } from "../colorMath.js";
 import { normalizePreviewOrigin, previewFrameSrc } from "../previewUrl.js";
+import { applyScales, resolveScales } from "../scales.js";
 import { LOFI_SHOTS, LofiShot } from "../screens/lofi.jsx";
 import { applyColors, resolvePaintColors, STARTER_THEMES } from "../tokens.js";
+import AppShots from "./AppShots.jsx";
+import { ShapeEditor, SpacingEditor } from "./ScaleEditors.jsx";
+import { ShotGrid, ShotSingle } from "./ShotViews.jsx";
 import ColorwayEditor from "./ColorwayEditor.jsx";
 
 const VIEW_TABS = [
@@ -102,11 +106,14 @@ function PhoneStage({ aspect, children }) {
   );
 }
 
-function ViewScreen({ colors, theme, aspect, variant, children }) {
+function ViewScreen({ colors, theme, scales, aspect, variant, children }) {
   const ref = useRef(null);
   useEffect(() => {
     applyColors(ref.current, resolvePaintColors(colors, theme));
   }, [colors, theme]);
+  useEffect(() => {
+    if (scales) applyScales(ref.current, scales);
+  }, [scales]);
   const phone = variant === "phone" ? parseAspect(aspect) : null;
   return (
     <div
@@ -133,138 +140,31 @@ function PlaceholderScreen({ colors, theme, aspect, variant, label }) {
   );
 }
 
-function LofiGrid({ colors, theme, aspect, onOpen }) {
-  const gridRef = useRef(null);
+function LofiShots({ colors, theme, scales, aspect, index, onIndex }) {
   const { width, height } = parseAspect(aspect);
-  const [layout, setLayout] = useState({ columns: 4, scale: 0.4 });
-  const gap = 16;
-
-  useEffect(() => {
-    const grid = gridRef.current;
-    if (!grid) return undefined;
-    const fit = () => {
-      const available = grid.clientWidth;
-      if (!available) return;
-      const columns = Math.max(1, Math.min(4, Math.floor((available + gap) / (180 + gap))));
-      const cell = (available - gap * (columns - 1)) / columns;
-      setLayout({ columns, scale: Math.min(cell / width, 1) });
-    };
-    fit();
-    const observer = new ResizeObserver(fit);
-    observer.observe(grid);
-    return () => observer.disconnect();
-  }, [width]);
-
-  return (
-    <div
-      ref={gridRef}
-      className="viz-lofi-grid"
-      style={{ gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`, gap }}
-    >
-      {LOFI_SHOTS.map((shot, index) => (
-        <button
-          type="button"
-          className="viz-lofi-cell"
-          key={shot.id}
-          aria-label={`Open ${shot.label}`}
-          onClick={() => onOpen(index)}
-        >
-          <div
-            className="viz-phone-slot"
-            style={{ width: width * layout.scale, height: height * layout.scale }}
-          >
-            <div
-              className="viz-phone-scale"
-              style={{ width, height, transform: `scale(${layout.scale})` }}
-            >
-              <ViewScreen colors={colors} theme={theme} aspect={aspect} variant="phone">
-                <LofiShot Screen={shot.Screen} />
-              </ViewScreen>
-            </div>
-          </div>
-          <span className="viz-frame-label">{shot.label}</span>
-        </button>
-      ))}
-    </div>
+  const items = LOFI_SHOTS.map((shot) => ({ ...shot, width, height }));
+  const renderScreen = (item) => (
+    <ViewScreen colors={colors} theme={theme} scales={scales} aspect={aspect} variant="phone">
+      <LofiShot Screen={item.Screen} />
+    </ViewScreen>
   );
-}
-
-function NavIcon({ kind }) {
-  const paths = {
-    grid: "M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z",
-    prev: "M10 3.5 5.5 8l4.5 4.5",
-    next: "M6 3.5 10.5 8 6 12.5",
-  };
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d={paths[kind]}
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+  if (index === null) {
+    return (
+      <ShotGrid
+        items={items}
+        renderScreen={renderScreen}
+        onOpen={(item) => onIndex(items.indexOf(item))}
       />
-    </svg>
-  );
-}
-
-function LofiSingle({ colors, theme, aspect, index, onIndex, onClose }) {
-  const count = LOFI_SHOTS.length;
-  const shot = LOFI_SHOTS[index];
-  const step = (delta) => onIndex((index + delta + count) % count);
-
-  useEffect(() => {
-    const onKey = (event) => {
-      if (event.target.closest("input, textarea, select, [contenteditable]")) return;
-      if (event.key === "ArrowLeft") step(-1);
-      else if (event.key === "ArrowRight") step(1);
-      else if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  });
-
+    );
+  }
   return (
-    <div className="viz-lofi-single">
-      <div className="viz-lofi-single-head">
-        <button
-          type="button"
-          className="viz-icon"
-          aria-label="All pages"
-          title="All pages"
-          onClick={onClose}
-        >
-          <NavIcon kind="grid" />
-        </button>
-        <span className="viz-lofi-single-title">{shot.label}</span>
-        <span className="viz-frame-label">
-          {index + 1} / {count}
-        </span>
-      </div>
-      <div className="viz-lofi-single-body">
-        <button
-          type="button"
-          className="viz-icon viz-lofi-arrow"
-          aria-label="Previous page"
-          onClick={() => step(-1)}
-        >
-          <NavIcon kind="prev" />
-        </button>
-        <PhoneStage aspect={aspect}>
-          <ViewScreen colors={colors} theme={theme} aspect={aspect} variant="phone">
-            <LofiShot Screen={shot.Screen} />
-          </ViewScreen>
-        </PhoneStage>
-        <button
-          type="button"
-          className="viz-icon viz-lofi-arrow"
-          aria-label="Next page"
-          onClick={() => step(1)}
-        >
-          <NavIcon kind="next" />
-        </button>
-      </div>
-    </div>
+    <ShotSingle
+      items={items}
+      index={index}
+      onIndex={onIndex}
+      onClose={() => onIndex(null)}
+      renderScreen={renderScreen}
+    />
   );
 }
 
@@ -323,6 +223,9 @@ export default function Visualizer({ project, onUpdate }) {
   const [viewTab, setViewTab] = useState("live");
   const [staticSource, setStaticSource] = useState("lofi");
   const [lofiIndex, setLofiIndex] = useState(null);
+  const [capture, setCapture] = useState({ state: "idle", message: "" });
+  const [draftScales, setDraftScales] = useState(() => resolveScales(project.tokenScales));
+  const [savedScales, setSavedScales] = useState(() => resolveScales(project.tokenScales));
   const [openEditor, setOpenEditor] = useState(null);
   const [draftByTheme, setDraftByTheme] = useState(() => themeBags(project));
   const [savedByTheme, setSavedByTheme] = useState(() => themeBags(project));
@@ -335,13 +238,16 @@ export default function Visualizer({ project, onUpdate }) {
   const presetId = mode === "mobile" ? mobilePreset : desktopPreset;
   const preset = presets.find((item) => item.id === presetId) || presets[0];
   const active = routes.includes(selected) ? selected : routes[0] || "";
-  const showLofi = viewTab === "static" && staticSource === "lofi";
+  const scalesDirty = JSON.stringify(draftScales) !== JSON.stringify(savedScales);
 
   useEffect(() => {
     const bags = themeBags(project);
     setDraftByTheme(bags);
     setSavedByTheme(bags);
     setSaveError("");
+    const scales = resolveScales(project.tokenScales);
+    setDraftScales(scales);
+    setSavedScales(scales);
   }, [project.id]);
 
   useEffect(() => {
@@ -501,6 +407,35 @@ export default function Visualizer({ project, onUpdate }) {
     });
   }
 
+  async function captureLive() {
+    const { width, height } = parseAspect(preset.aspect);
+    setCapture({ state: "busy", message: "Capturing…" });
+    try {
+      const res = await fetch("/api/appshots/capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: project.slug,
+          origin: previewOrigin,
+          route: active,
+          device: mode === "mobile" ? "mobile" : "desktop",
+          width,
+          height,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Capture failed.");
+      setCapture({ state: "done", message: `Added "${data.shot.label}" to AppShots.` });
+    } catch (error) {
+      setCapture({ state: "error", message: error.message });
+    }
+  }
+
+  function saveScales() {
+    onUpdate({ ...project, tokenScales: draftScales });
+    setSavedScales(draftScales);
+  }
+
   async function saveColors() {
     setSavingColors(true);
     setSaveError("");
@@ -571,17 +506,7 @@ export default function Visualizer({ project, onUpdate }) {
         variant={mode === "mobile" ? "phone" : "desktop"}
       />
     );
-  } else if (viewTab === "static") {
-    canvas = canvasFrame(
-      <PlaceholderScreen
-        colors={colors}
-        theme={theme}
-        aspect={preset.aspect}
-        variant={mode === "mobile" ? "phone" : "desktop"}
-        label="App shots coming next."
-      />
-    );
-  } else {
+  } else if (viewTab === "layout") {
     canvas = canvasFrame(
       <PlaceholderScreen
         colors={colors}
@@ -684,25 +609,33 @@ export default function Visualizer({ project, onUpdate }) {
           </div>
         </div>
 
-        {showLofi ? (
+        {viewTab === "static" ? (
           <div className="viz-canvas viz-lofi">
-            {mode !== "mobile" ? (
-              <p className="muted">LoFi shots are mobile only.</p>
-            ) : lofiIndex === null ? (
-              <LofiGrid
-                colors={colors}
-                theme={theme}
-                aspect={preset.aspect}
-                onOpen={setLofiIndex}
+            {staticSource === "appshots" ? (
+              <AppShots
+                slug={project.slug}
+                renderFrame={(item, child) => (
+                  <ViewScreen
+                    colors={colors}
+                    theme={theme}
+                    scales={draftScales}
+                    aspect={`${item.width} / ${item.height}`}
+                    variant="phone"
+                  >
+                    {child}
+                  </ViewScreen>
+                )}
               />
+            ) : mode !== "mobile" ? (
+              <p className="muted">LoFi shots are mobile only.</p>
             ) : (
-              <LofiSingle
+              <LofiShots
                 colors={colors}
                 theme={theme}
+                scales={draftScales}
                 aspect={preset.aspect}
                 index={lofiIndex}
                 onIndex={setLofiIndex}
-                onClose={() => setLofiIndex(null)}
               />
             )}
           </div>
@@ -768,6 +701,46 @@ export default function Visualizer({ project, onUpdate }) {
                 <div className="viz-single-bar">
                   <div className="viz-frame-label">{active}</div>
                   <div className="row">
+                    {viewTab === "live" ? (
+                      <>
+                        {capture.message ? (
+                          <span className={`viz-capture-status ${capture.state}`}>
+                            {capture.message}
+                          </span>
+                        ) : null}
+                        {capture.state === "done" ? (
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => {
+                              setCapture({ state: "idle", message: "" });
+                              setStaticSource("appshots");
+                              setViewTab("static");
+                            }}
+                          >
+                            View
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          disabled={
+                            capture.state === "busy" ||
+                            !project.slug ||
+                            !previewOrigin ||
+                            devState !== "running"
+                          }
+                          title={
+                            devState !== "running"
+                              ? "Start the app to capture"
+                              : "Save a full-page screenshot of this view to AppShots"
+                          }
+                          onClick={captureLive}
+                        >
+                          {capture.state === "busy" ? "Capturing…" : "Capture"}
+                        </button>
+                      </>
+                    ) : null}
                     <button
                       type="button"
                       className="viz-icon"
@@ -838,6 +811,22 @@ export default function Visualizer({ project, onUpdate }) {
                         brandColors={project.brandColors || []}
                         onAddBrandColor={addBrandColor}
                         onRemoveBrandColor={removeBrandColor}
+                      />
+                    ) : editor.id === "spacing" ? (
+                      <SpacingEditor
+                        scales={draftScales}
+                        dirty={scalesDirty}
+                        locks={project.tokenLocks || {}}
+                        onChange={setDraftScales}
+                        onToggleLock={toggleLock}
+                        onSave={saveScales}
+                      />
+                    ) : editor.id === "elevation" ? (
+                      <ShapeEditor
+                        scales={draftScales}
+                        dirty={scalesDirty}
+                        onChange={setDraftScales}
+                        onSave={saveScales}
                       />
                     ) : (
                       <p className="muted">Not wired yet.</p>

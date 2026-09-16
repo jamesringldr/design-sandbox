@@ -1668,3 +1668,221 @@ iframe.viz-screen {
   height: 36px;
   border: 1px solid var(--tool-border-strong);
 }
+
+/* Shared shot views */
+
+.viz-shot-stage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  justify-content: safe center;
+  align-items: safe center;
+}
+
+.viz-lofi-single-extra {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.seg.seg-sm {
+  height: 28px;
+}
+
+.seg.seg-sm button {
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.btn.btn-sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* AppShots */
+
+.viz-shots {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: 10px;
+  outline: 2px dashed transparent;
+  outline-offset: -2px;
+}
+
+.viz-shots.dragging {
+  outline-color: var(--tool-brand);
+  background: var(--tool-brand-subtle);
+}
+
+.viz-shots > .viz-lofi-single {
+  flex: 1;
+}
+
+.viz-shots-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.viz-shots-bar .muted {
+  font-size: 12px;
+}
+
+.viz-shots-error,
+.viz-shot-error {
+  font-size: 12px;
+  color: var(--tool-danger);
+}
+
+.viz-shot-error {
+  padding: 16px;
+}
+
+.viz-shots-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.viz-shots-empty {
+  flex: 1;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 24px;
+  text-align: center;
+  border: 1px dashed var(--tool-border-strong);
+  border-radius: 10px;
+  color: var(--tool-text);
+}
+
+.viz-shot-badge {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--tool-warning, #ff5e1f);
+  color: var(--tool-warning, #ff5e1f);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.viz-shot-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.viz-shot-page {
+  min-height: 100%;
+}
+
+/* Spacing / elevation editors */
+
+.sc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sc-range {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--tool-brand);
+}
+
+.sc-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--tool-muted);
+}
+
+.sc-num .input {
+  width: 64px;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 11px;
+}
+
+.sc-hint,
+.sc-use {
+  margin: 0;
+  font-size: 11px;
+  color: var(--tool-muted);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-bar {
+  flex-shrink: 0;
+  height: 10px;
+  min-width: 2px;
+  border-radius: 2px;
+  background: var(--tool-brand);
+}
+
+.sc-radius,
+.sc-border,
+.sc-shadow {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--tool-surface);
+}
+
+.sc-border {
+  border-style: solid;
+  border-color: rgba(255, 255, 255, 0.7);
+  border-radius: 4px;
+}
+
+.sc-shadow {
+  border-radius: 4px;
+  background: #3a3a3a;
+}
+
+.sc-shadow-fields {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  font-size: 11px;
+  color: var(--tool-muted);
+}
+
+.sc-shadow-fields .sc-num .input {
+  width: 52px;
+}
+
+.viz-capture-status {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--tool-muted);
+}
+
+.viz-capture-status.done {
+  color: var(--tool-success);
+}
+
+.viz-capture-status.error {
+  color: var(--tool-danger);
+}
