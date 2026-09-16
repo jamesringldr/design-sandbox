@@ -36,6 +36,8 @@ import {
 } from "./src/designWorktree.js";
 import { MANIFEST_PATH, tokenChanges } from "./src/bibleManifest.js";
 import { extractThemes, themesEmpty } from "./src/tokens.js";
+import { addShot, listShots, readShotFile, removeShot, updateShot } from "./appshots.js";
+import { captureShot } from "./capture.js";
 
 const execFileAsync = promisify(execFile);
 const APP_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -57,6 +59,12 @@ const ROUTES = new Set([
   "/api/dev-server/start",
   "/api/dev-server/stop",
   "/api/dev-server/status",
+  "/api/appshots",
+  "/api/appshots/upload",
+  "/api/appshots/update",
+  "/api/appshots/remove",
+  "/api/appshots/file",
+  "/api/appshots/capture",
 ]);
 
 function send(res, status, body) {
@@ -299,6 +307,46 @@ export default function localRepoPlugin() {
         }
 
         try {
+          if (url.startsWith("/api/appshots")) {
+            const query = new URL(req.url, "http://localhost").searchParams;
+            if (req.method === "GET" && url === "/api/appshots") {
+              send(res, 200, { shots: await listShots(DATA_ROOT, query.get("slug")) });
+              return;
+            }
+            if (req.method === "GET" && url === "/api/appshots/file") {
+              const file = await readShotFile(DATA_ROOT, {
+                slug: query.get("slug"),
+                file: query.get("file"),
+              });
+              res.statusCode = 200;
+              res.setHeader("Content-Type", file.type);
+              res.setHeader("Cache-Control", "no-store");
+              res.end(file.body);
+              return;
+            }
+            if (req.method === "POST") {
+              const body = await readJsonBody(req);
+              if (url === "/api/appshots/upload") {
+                send(res, 200, { shot: await addShot(DATA_ROOT, body) });
+                return;
+              }
+              if (url === "/api/appshots/update") {
+                send(res, 200, { shot: await updateShot(DATA_ROOT, body) });
+                return;
+              }
+              if (url === "/api/appshots/capture") {
+                send(res, 200, {
+                  shot: await captureShot(DATA_ROOT, { ...body, host: req.headers.host }),
+                });
+                return;
+              }
+              if (url === "/api/appshots/remove") {
+                send(res, 200, await removeShot(DATA_ROOT, body));
+                return;
+              }
+            }
+          }
+
           if (req.method === "GET" && url === "/api/select-folder") {
             if (process.platform !== "darwin") {
               send(res, 501, { error: "Folder picker is macOS only for now." });

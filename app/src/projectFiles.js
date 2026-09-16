@@ -59,6 +59,7 @@ export function projectMeta(project, slug) {
     componentLibrary: project.componentLibrary || "",
     tokenLocks: project.tokenLocks || {},
     brandColors: project.brandColors || [],
+    tokenScales: project.tokenScales || null,
     elementLocks: project.elementLocks || {},
     artifacts: project.artifacts || [],
     routes: project.routes || [],
