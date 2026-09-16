@@ -35,7 +35,12 @@ export default function BiblePanel({ project, onUpdate }) {
   const [confirming, setConfirming] = useState(false);
   const [marking, setMarking] = useState("");
   const [designOpen, setDesignOpen] = useState(true);
+  const [checkpointPreview, setCheckpointPreview] = useState(null);
+  const [checkpointBusy, setCheckpointBusy] = useState(false);
+  const [checkpointResult, setCheckpointResult] = useState(null);
+  const [checkpointError, setCheckpointError] = useState("");
   const canScan = Boolean(project.localPath);
+  const canCheckpoint = Boolean(project.slug);
 
   function patchPaths(partial) {
     onUpdate({
@@ -91,8 +96,10 @@ export default function BiblePanel({ project, onUpdate }) {
       if (!res.ok) throw new Error(data.error || "Integrate failed.");
       setStatus(data);
       setError("");
+      return true;
     } catch (err) {
       setError(err.message);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -118,6 +125,53 @@ export default function BiblePanel({ project, onUpdate }) {
     }
   }
 
+  async function openCheckpoint() {
+    setCheckpointError("");
+    setCheckpointResult(null);
+    setCheckpointBusy(true);
+    try {
+      const res = await fetch("/api/bible-checkpoint-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: project.slug }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not check the design bible.");
+      setCheckpointPreview(data);
+    } catch (err) {
+      setCheckpointError(err.message);
+    } finally {
+      setCheckpointBusy(false);
+    }
+  }
+
+  async function runCheckpoint() {
+    setCheckpointBusy(true);
+    setCheckpointPreview(null);
+    try {
+      if (canScan) {
+        const ok = await integrate();
+        if (!ok) {
+          setCheckpointError("Could not write into the project repo — checkpoint stopped before touching design-sandbox.");
+          return;
+        }
+      }
+      const res = await fetch("/api/bible-checkpoint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug: project.slug, confirmBranch: checkpointPreview.branch }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Checkpoint failed.");
+      setCheckpointResult(data);
+      setCheckpointError("");
+    } catch (err) {
+      setCheckpointError(err.message);
+    } finally {
+      setCheckpointBusy(false);
+    }
+  }
+
   const solidified = status?.manifest?.status === "solidified";
   const coreReady = ["manifest", "designMd", "tokensCss", "componentsMd"].every(
     (id) => status?.items.find((item) => item.id === id)?.state === "ok"
@@ -125,16 +179,43 @@ export default function BiblePanel({ project, onUpdate }) {
 
   return (
     <div className="page">
-      <div>
-        <div className="eyebrow">Design bible</div>
-        <h2 style={{ margin: "6px 0 0", fontSize: "22px", letterSpacing: "-0.02em" }}>
-          {project.name}
-        </h2>
-        <p className="muted">
-          Playbook files in the connected repo. 0–11 are required; 12 Effects is
-          optional. Integrate writes DESIGN.md and tokens.css and logs the change
-          in DESIGN-BIBLE.md — it will not touch theme.css.
-        </p>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "16px" }}>
+        <div>
+          <div className="eyebrow">Design bible</div>
+          <h2 style={{ margin: "6px 0 0", fontSize: "22px", letterSpacing: "-0.02em" }}>
+            {project.name}
+          </h2>
+          <p className="muted">
+            Playbook files in the connected repo. 0–11 are required; 12 Effects is
+            optional. Integrate writes DESIGN.md and tokens.css and logs the change
+            in DESIGN-BIBLE.md — it will not touch theme.css.
+          </p>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <button
+            type="button"
+            className="btn btn-primary"
+            disabled={!canCheckpoint || checkpointBusy}
+            onClick={openCheckpoint}
+            title={canCheckpoint ? "" : "This project has no slug yet — save it once in the Visualizer first."}
+          >
+            {checkpointBusy ? "Working…" : "Checkpoint & publish"}
+          </button>
+          {checkpointResult ? (
+            <p className="muted" style={{ marginTop: "8px", maxWidth: "260px" }}>
+              {checkpointResult.committed
+                ? `Committed ${checkpointResult.sha} on ${checkpointResult.branch}${
+                    checkpointResult.pushed ? ", pushed." : ` — push failed: ${checkpointResult.pushError}`
+                  }`
+                : checkpointResult.message}
+            </p>
+          ) : null}
+          {checkpointError ? (
+            <p className="save-status error" style={{ marginTop: "8px", maxWidth: "260px" }}>
+              {checkpointError}
+            </p>
+          ) : null}
+        </div>
       </div>
 
       <div className="panel">
@@ -279,6 +360,23 @@ export default function BiblePanel({ project, onUpdate }) {
           danger={false}
           onCancel={() => setMarking("")}
           onConfirm={() => mark(marking)}
+        />
+      ) : null}
+
+      {checkpointPreview ? (
+        <ConfirmModal
+          title="Checkpoint & publish design bible"
+          body={
+            `${canScan ? `1. Write DESIGN.md and tokens.css into ${project.name}, same as Integrate into project. ` : ""}` +
+            `${canScan ? "2. " : ""}Commit data/projects/${project.slug}/design.md and the regenerated docs/${project.slug}/ agent docs to design-sandbox on branch "${checkpointPreview.branch}", then push. ` +
+            (checkpointPreview.changed
+              ? `${checkpointPreview.tokenCount} tokens.`
+              : "Nothing has changed since the last checkpoint, so the sandbox commit will be skipped.")
+          }
+          confirmLabel="Checkpoint & publish"
+          danger={false}
+          onCancel={() => setCheckpointPreview(null)}
+          onConfirm={runCheckpoint}
         />
       ) : null}
     </div>
