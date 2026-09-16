@@ -1553,6 +1553,7 @@ iframe.viz-screen {
 }
 
 .viz-lofi-grid {
+  flex-shrink: 0;
   display: grid;
   align-items: start;
   padding-bottom: 16px;
@@ -1560,12 +1561,71 @@ iframe.viz-screen {
 
 .viz-lofi-cell {
   margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.viz-lofi-cell .viz-phone-slot {
+  border-radius: 12px;
+  outline: 2px solid transparent;
+  outline-offset: 3px;
+}
+
+.viz-lofi-cell:hover .viz-phone-slot,
+.viz-lofi-cell:focus-visible .viz-phone-slot {
+  outline-color: var(--tool-brand);
+}
+
+.viz-lofi-cell:focus-visible {
+  outline: none;
 }
 
 .viz-lofi {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.viz-lofi-single {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.viz-lofi-single-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-lofi-single-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tool-text);
+}
+
+.viz-lofi-single-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 16px;
+}
+
+.viz-lofi-arrow {
+  flex-shrink: 0;
+  align-self: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--tool-border-strong);
 }

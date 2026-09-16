@@ -131,7 +131,7 @@ function PlaceholderScreen({ colors, theme, aspect, variant, label }) {
   );
 }
 
-function LofiGrid({ colors, theme, aspect }) {
+function LofiGrid({ colors, theme, aspect, onOpen }) {
   const gridRef = useRef(null);
   const { width, height } = parseAspect(aspect);
   const [layout, setLayout] = useState({ columns: 4, scale: 0.4 });
@@ -159,8 +159,14 @@ function LofiGrid({ colors, theme, aspect }) {
       className="viz-lofi-grid"
       style={{ gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`, gap }}
     >
-      {LOFI_SHOTS.map((shot) => (
-        <figure className="viz-lofi-cell" key={shot.id}>
+      {LOFI_SHOTS.map((shot, index) => (
+        <button
+          type="button"
+          className="viz-lofi-cell"
+          key={shot.id}
+          aria-label={`Open ${shot.label}`}
+          onClick={() => onOpen(index)}
+        >
           <div
             className="viz-phone-slot"
             style={{ width: width * layout.scale, height: height * layout.scale }}
@@ -174,9 +180,88 @@ function LofiGrid({ colors, theme, aspect }) {
               </ViewScreen>
             </div>
           </div>
-          <figcaption className="viz-frame-label">{shot.label}</figcaption>
-        </figure>
+          <span className="viz-frame-label">{shot.label}</span>
+        </button>
       ))}
+    </div>
+  );
+}
+
+function NavIcon({ kind }) {
+  const paths = {
+    grid: "M3 3h4v4H3zM9 3h4v4H9zM3 9h4v4H3zM9 9h4v4H9z",
+    prev: "M10 3.5 5.5 8l4.5 4.5",
+    next: "M6 3.5 10.5 8 6 12.5",
+  };
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d={paths[kind]}
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function LofiSingle({ colors, theme, aspect, index, onIndex, onClose }) {
+  const count = LOFI_SHOTS.length;
+  const shot = LOFI_SHOTS[index];
+  const step = (delta) => onIndex((index + delta + count) % count);
+
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.target.closest("input, textarea, select, [contenteditable]")) return;
+      if (event.key === "ArrowLeft") step(-1);
+      else if (event.key === "ArrowRight") step(1);
+      else if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  return (
+    <div className="viz-lofi-single">
+      <div className="viz-lofi-single-head">
+        <button
+          type="button"
+          className="viz-icon"
+          aria-label="All pages"
+          title="All pages"
+          onClick={onClose}
+        >
+          <NavIcon kind="grid" />
+        </button>
+        <span className="viz-lofi-single-title">{shot.label}</span>
+        <span className="viz-frame-label">
+          {index + 1} / {count}
+        </span>
+      </div>
+      <div className="viz-lofi-single-body">
+        <button
+          type="button"
+          className="viz-icon viz-lofi-arrow"
+          aria-label="Previous page"
+          onClick={() => step(-1)}
+        >
+          <NavIcon kind="prev" />
+        </button>
+        <PhoneStage aspect={aspect}>
+          <ViewScreen colors={colors} theme={theme} aspect={aspect} variant="phone">
+            <LofiShot Screen={shot.Screen} />
+          </ViewScreen>
+        </PhoneStage>
+        <button
+          type="button"
+          className="viz-icon viz-lofi-arrow"
+          aria-label="Next page"
+          onClick={() => step(1)}
+        >
+          <NavIcon kind="next" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -235,6 +320,7 @@ export default function Visualizer({ project, onUpdate }) {
   const [liveKey, setLiveKey] = useState(0);
   const [viewTab, setViewTab] = useState("live");
   const [staticSource, setStaticSource] = useState("lofi");
+  const [lofiIndex, setLofiIndex] = useState(null);
   const [openEditor, setOpenEditor] = useState(null);
   const [draftByTheme, setDraftByTheme] = useState(() => themeBags(project));
   const [savedByTheme, setSavedByTheme] = useState(() => themeBags(project));
@@ -553,10 +639,24 @@ export default function Visualizer({ project, onUpdate }) {
 
         {showLofi ? (
           <div className="viz-canvas viz-lofi">
-            {mode === "mobile" ? (
-              <LofiGrid colors={colors} theme={theme} aspect={preset.aspect} />
-            ) : (
+            {mode !== "mobile" ? (
               <p className="muted">LoFi shots are mobile only.</p>
+            ) : lofiIndex === null ? (
+              <LofiGrid
+                colors={colors}
+                theme={theme}
+                aspect={preset.aspect}
+                onOpen={setLofiIndex}
+              />
+            ) : (
+              <LofiSingle
+                colors={colors}
+                theme={theme}
+                aspect={preset.aspect}
+                index={lofiIndex}
+                onIndex={setLofiIndex}
+                onClose={() => setLofiIndex(null)}
+              />
             )}
           </div>
         ) : (
