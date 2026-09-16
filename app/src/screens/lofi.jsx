@@ -346,34 +346,37 @@ function RowLink({ title, sub }) {
   );
 }
 
-function Summary() {
+function Field({ label, value, placeholder, focused, multiline }) {
+  const classes = ["lf-input"];
+  if (value) classes.push("filled");
+  if (focused) classes.push("focus");
+  if (multiline) classes.push("lf-textarea");
+  return (
+    <label className="lf-field-group lf-field">
+      <span className="lf-label">{label}</span>
+      <span className={classes.join(" ")}>
+        {value || placeholder}
+        {focused ? <i className="lf-caret" /> : null}
+      </span>
+    </label>
+  );
+}
+
+function Form() {
   return (
     <>
-      <TopBar title="Your list" />
+      <TopBar title="Edit profile" action="Cancel" />
       <div className="lf-body">
-        <span className="lf-caption">1 item in your list</span>
-        <div className="lf-item">
-          <div className="lf-thumb" />
-          <div className="lf-stack lf-grow">
-            <strong>Item title</strong>
-            <span className="lf-caption">Size: M</span>
-            <span className="lf-caption">$30.00</span>
-            <div className="lf-row lf-gap-8">
-              <Stepper />
-              <span className="lf-spacer" />
-              <span className="lf-icon-box lf-icon-danger" />
-            </div>
-          </div>
-        </div>
-        <RowLink title="Payment method" sub="Choose a payment method" />
-        <RowLink title="Delivery address" sub="221 Harbor St, Portland" />
+        <Section title="Filled">
+          <Field label="Full name" value="Alex Morgan" />
+          <Field label="Email" value="alex@example.com" focused />
+        </Section>
+        <Section title="Empty">
+          <Field label="Phone" placeholder="(555) 000-0000" />
+          <Field label="Bio" placeholder="Tell people about yourself" multiline />
+        </Section>
         <span className="lf-spacer" />
-        <div className="lf-row lf-total">
-          <strong>Total</strong>
-          <span className="lf-spacer" />
-          <strong>$30.00</strong>
-        </div>
-        <div className="lf-btn">Check out</div>
+        <div className="lf-btn">Save</div>
       </div>
     </>
   );
@@ -418,7 +421,7 @@ export const LOFI_SHOTS = [
   { id: "search", label: "Search", Screen: SearchScreen },
   { id: "filters-applied", label: "Filters · applied", Screen: Filters },
   { id: "detail", label: "Detail · confirm", Screen: Detail },
-  { id: "summary", label: "Summary", Screen: Summary },
+  { id: "form", label: "Form · empty + filled", Screen: Form },
   { id: "choice-selected", label: "Choice · selected", Screen: Choice },
 ];
 

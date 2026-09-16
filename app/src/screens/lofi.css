@@ -10,7 +10,6 @@
   --lf-brand: var(--brand, #14abfe);
   --lf-brand-subtle: var(--brand-subtle, rgba(20, 171, 254, 0.14));
   --lf-on-brand: var(--on-control-contrast, #1a1a1a);
-  --lf-danger: var(--destructive, #e5484d);
 
   position: relative;
   width: 100%;
@@ -102,10 +101,6 @@
   height: 28px;
   border-radius: 6px;
   border: 1.5px solid var(--lf-border);
-}
-
-.lf-icon-danger {
-  border-color: var(--lf-danger);
 }
 
 .lf-tabbar {
@@ -358,6 +353,32 @@
   color: var(--lf-muted);
 }
 
+.lf-field {
+  align-items: stretch;
+}
+
+.lf-input.filled {
+  color: var(--lf-text);
+}
+
+.lf-input.focus {
+  border-color: var(--lf-brand);
+  box-shadow: 0 0 0 3px var(--lf-brand-subtle);
+}
+
+.lf-textarea {
+  height: 96px;
+  padding-top: 12px;
+  align-items: flex-start;
+}
+
+.lf-caret {
+  width: 1.5px;
+  height: 18px;
+  margin-left: 1px;
+  background: var(--lf-brand);
+}
+
 .lf-radios {
   margin: 0;
   padding: 0;
@@ -498,12 +519,6 @@
 
 .lf-rowlink .lf-stack {
   flex: 1;
-}
-
-.lf-total {
-  font-size: 17px;
-  padding-top: 12px;
-  border-top: 1px solid var(--lf-border);
 }
 
 .lf-option {
