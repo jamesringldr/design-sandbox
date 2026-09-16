@@ -35,6 +35,7 @@ import {
   worktreeNeedsInstall,
 } from "./src/designWorktree.js";
 import { MANIFEST_PATH, tokenChanges } from "./src/bibleManifest.js";
+import { checkpointSandbox, checkpointStatus } from "./src/sandboxCheckpoint.js";
 import { extractThemes, themesEmpty } from "./src/tokens.js";
 import { addShot, listShots, readShotFile, removeShot, updateShot } from "./appshots.js";
 import { captureShot } from "./capture.js";
@@ -57,6 +58,8 @@ const ROUTES = new Set([
   "/api/bible-bootstrap",
   "/api/bible-integrate",
   "/api/bible-mark",
+  "/api/bible-checkpoint-status",
+  "/api/bible-checkpoint",
   "/api/dev-server/start",
   "/api/dev-server/stop",
   "/api/dev-server/status",
@@ -640,6 +643,42 @@ export default function localRepoPlugin() {
               },
             });
             send(res, 200, await scanBible(root, body, paths));
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/bible-checkpoint-status") {
+            const body = await readJsonBody(req);
+            if (!body.slug || typeof body.slug !== "string") {
+              send(res, 400, { error: "A project slug is required." });
+              return;
+            }
+            try {
+              send(res, 200, await checkpointStatus({ slug: body.slug, repoRoot: PLAYGROUND_ROOT }));
+            } catch (error) {
+              send(res, 400, { error: error.message });
+            }
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/bible-checkpoint") {
+            const body = await readJsonBody(req);
+            if (!body.slug || typeof body.slug !== "string") {
+              send(res, 400, { error: "A project slug is required." });
+              return;
+            }
+            try {
+              send(
+                res,
+                200,
+                await checkpointSandbox({
+                  slug: body.slug,
+                  repoRoot: PLAYGROUND_ROOT,
+                  confirmBranch: body.confirmBranch,
+                })
+              );
+            } catch (error) {
+              send(res, 400, { error: error.message });
+            }
             return;
           }
 
