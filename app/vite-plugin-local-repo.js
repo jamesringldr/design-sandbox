@@ -207,7 +207,7 @@ async function savePlayground(state) {
       light: tokens.light || {},
       dark: tokens.dark || {},
     });
-    await writeFileAtomic(path.join(dir, "theme.css"), generateThemeCss(tokens));
+    await writeFileAtomic(path.join(dir, "theme.css"), generateThemeCss(tokens, project.brandColors));
     await writeFileAtomic(
       path.join(dir, "design.md"),
       generateDesignMd(project, tokens)
