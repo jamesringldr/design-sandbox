@@ -1,0 +1,574 @@
+/* Generic lo-fi shots. Paint only through project tokens so edits restyle them live. */
+
+.lf {
+  --lf-bg: var(--background, #282828);
+  --lf-surface: var(--surface, #404040);
+  --lf-elevated: var(--surface-elevated, #333333);
+  --lf-text: var(--text, #ffffff);
+  --lf-muted: var(--text-muted, #a3a3a3);
+  --lf-border: var(--border, rgba(255, 255, 255, 0.1));
+  --lf-brand: var(--brand, #14abfe);
+  --lf-brand-subtle: var(--brand-subtle, rgba(20, 171, 254, 0.14));
+  --lf-on-brand: var(--on-control-contrast, #1a1a1a);
+  --lf-danger: var(--destructive, #e5484d);
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--lf-bg);
+  color: var(--lf-text);
+  font-family: "IBM Plex Sans", Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.lf * {
+  box-sizing: border-box;
+}
+
+.lf strong {
+  font-weight: 600;
+}
+
+/* Chrome */
+
+.lf-status {
+  flex-shrink: 0;
+  height: 54px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lf-island {
+  width: 120px;
+  height: 34px;
+  border-radius: 999px;
+  background: #000;
+}
+
+.lf-status-icons {
+  display: flex;
+  gap: 6px;
+}
+
+.lf-status-icons i {
+  width: 18px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--lf-text);
+}
+
+.lf-topbar {
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lf-topbar-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.lf-back,
+.lf-chev {
+  color: var(--lf-text);
+  font-size: 26px;
+  line-height: 1;
+}
+
+.lf-chev {
+  color: var(--lf-muted);
+}
+
+.lf-link {
+  color: var(--lf-brand);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.lf-icon-box {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1.5px solid var(--lf-border);
+}
+
+.lf-icon-danger {
+  border-color: var(--lf-danger);
+}
+
+.lf-tabbar {
+  flex-shrink: 0;
+  height: 84px;
+  padding: 8px 12px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border-top: 1px solid var(--lf-border);
+  background: var(--lf-bg);
+}
+
+.lf-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--lf-muted);
+}
+
+.lf-tab i {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1.5px solid currentColor;
+}
+
+.lf-tab.on {
+  color: var(--lf-brand);
+}
+
+.lf-tab-add {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--lf-brand);
+  color: var(--lf-on-brand);
+  font-size: 26px;
+  font-weight: 300;
+}
+
+/* Layout */
+
+.lf-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lf-row {
+  display: flex;
+  align-items: center;
+}
+
+.lf-gap-8 {
+  gap: 8px;
+}
+
+.lf-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.lf-spacer {
+  flex: 1;
+}
+
+.lf-grow {
+  flex: 1;
+}
+
+.lf-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lf-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Type */
+
+.lf-display {
+  margin: 8px 0 0;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.lf-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.lf-h {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lf-copy {
+  margin: 0;
+  color: var(--lf-muted);
+}
+
+.lf-caption {
+  font-size: 12px;
+  color: var(--lf-muted);
+}
+
+.lf-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--lf-muted);
+}
+
+.lf-price {
+  font-size: 26px;
+  font-weight: 600;
+}
+
+/* Blocks */
+
+.lf-search {
+  flex: 1;
+  height: 40px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  background: var(--lf-elevated);
+  color: var(--lf-muted);
+}
+
+.lf-search i {
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  border: 1.5px solid currentColor;
+}
+
+.lf-tile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-surface);
+}
+
+.lf-tile-tall {
+  aspect-ratio: 3 / 4;
+}
+
+.lf-tile-label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lf-banner {
+  position: relative;
+  height: 120px;
+  border-radius: 10px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-surface);
+}
+
+.lf-hero {
+  flex-shrink: 0;
+  height: 300px;
+  border-radius: 10px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-surface);
+}
+
+.lf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lf-chip {
+  height: 28px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid var(--lf-border);
+  color: var(--lf-muted);
+  font-size: 12px;
+}
+
+.lf-field-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.lf-select {
+  height: 32px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--lf-border);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.lf-select b {
+  font-weight: 400;
+  color: var(--lf-muted);
+}
+
+.lf-select.on {
+  border-color: var(--lf-brand);
+  color: var(--lf-brand);
+}
+
+.lf-input {
+  height: 44px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-bg);
+  color: var(--lf-muted);
+}
+
+.lf-radios {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lf-radios li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--lf-muted);
+}
+
+.lf-radios i,
+.lf-radio {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--lf-border);
+}
+
+.lf-radios li.on {
+  color: var(--lf-text);
+}
+
+.lf-radios li.on i,
+.lf-option.on .lf-radio {
+  border: 5px solid var(--lf-brand);
+}
+
+.lf-slider {
+  position: relative;
+  height: 4px;
+  margin: 8px 0;
+  border-radius: 999px;
+  background: var(--lf-elevated);
+}
+
+.lf-slider-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  border-radius: 999px;
+  background: var(--lf-brand);
+}
+
+.lf-slider-knob {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: var(--lf-text);
+  border: 2px solid var(--lf-brand);
+}
+
+.lf-seg {
+  width: 44px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--lf-border);
+  color: var(--lf-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lf-seg.on {
+  border-color: var(--lf-brand);
+  background: var(--lf-brand-subtle);
+  color: var(--lf-text);
+}
+
+.lf-btn {
+  flex-shrink: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--lf-brand);
+  color: var(--lf-on-brand);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lf-btn-off {
+  background: var(--lf-elevated);
+  color: var(--lf-muted);
+}
+
+.lf-stepper {
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--lf-border);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.lf-stepper b {
+  font-weight: 400;
+  color: var(--lf-muted);
+}
+
+.lf-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid var(--lf-border);
+}
+
+.lf-thumb {
+  flex-shrink: 0;
+  width: 96px;
+  height: 108px;
+  border-radius: 6px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-surface);
+}
+
+.lf-rowlink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--lf-border);
+}
+
+.lf-rowlink .lf-stack {
+  flex: 1;
+}
+
+.lf-total {
+  font-size: 17px;
+  padding-top: 12px;
+  border-top: 1px solid var(--lf-border);
+}
+
+.lf-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 68px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-elevated);
+}
+
+.lf-option.on {
+  border-color: var(--lf-brand);
+  background: var(--lf-brand-subtle);
+}
+
+/* Overlay */
+
+.lf-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--lf-bg) 30%, transparent);
+  backdrop-filter: brightness(0.55);
+}
+
+.lf-dialog {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 52%;
+  width: 280px;
+  transform: translate(-50%, -50%);
+  padding: 20px 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  border-radius: 10px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-surface);
+}
+
+.lf-dialog-actions {
+  align-self: stretch;
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--lf-border);
+  font-size: 14px;
+}
+
+.lf-dialog-actions span {
+  padding: 12px 0;
+}
+
+.lf-dialog-actions span + span {
+  border-left: 1px solid var(--lf-border);
+}

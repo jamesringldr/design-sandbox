@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { normalizePreviewOrigin, previewFrameSrc } from "../previewUrl.js";
-import { WIREFRAMES } from "../screens/index.js";
+import { LOFI_SHOTS, LofiShot } from "../screens/lofi.jsx";
 import { applyColors, resolvePaintColors, STARTER_THEMES } from "../tokens.js";
 import ColorwayEditor from "./ColorwayEditor.jsx";
 
@@ -131,6 +131,56 @@ function PlaceholderScreen({ colors, theme, aspect, variant, label }) {
   );
 }
 
+function LofiGrid({ colors, theme, aspect }) {
+  const gridRef = useRef(null);
+  const { width, height } = parseAspect(aspect);
+  const [layout, setLayout] = useState({ columns: 4, scale: 0.4 });
+  const gap = 16;
+
+  useEffect(() => {
+    const grid = gridRef.current;
+    if (!grid) return undefined;
+    const fit = () => {
+      const available = grid.clientWidth;
+      if (!available) return;
+      const columns = Math.max(1, Math.min(4, Math.floor((available + gap) / (180 + gap))));
+      const cell = (available - gap * (columns - 1)) / columns;
+      setLayout({ columns, scale: Math.min(cell / width, 1) });
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [width]);
+
+  return (
+    <div
+      ref={gridRef}
+      className="viz-lofi-grid"
+      style={{ gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))`, gap }}
+    >
+      {LOFI_SHOTS.map((shot) => (
+        <figure className="viz-lofi-cell" key={shot.id}>
+          <div
+            className="viz-phone-slot"
+            style={{ width: width * layout.scale, height: height * layout.scale }}
+          >
+            <div
+              className="viz-phone-scale"
+              style={{ width, height, transform: `scale(${layout.scale})` }}
+            >
+              <ViewScreen colors={colors} theme={theme} aspect={aspect} variant="phone">
+                <LofiShot Screen={shot.Screen} />
+              </ViewScreen>
+            </div>
+          </div>
+          <figcaption className="viz-frame-label">{shot.label}</figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+}
+
 function PreviewFrame({ origin, route, colors, theme, aspect, variant }) {
   const ref = useRef(null);
   const src = previewFrameSrc(origin, route);
@@ -197,7 +247,7 @@ export default function Visualizer({ project, onUpdate }) {
   const presetId = mode === "mobile" ? mobilePreset : desktopPreset;
   const preset = presets.find((item) => item.id === presetId) || presets[0];
   const active = routes.includes(selected) ? selected : routes[0] || "";
-  const Wireframe = WIREFRAMES[active];
+  const showLofi = viewTab === "static" && staticSource === "lofi";
 
   useEffect(() => {
     const bags = themeBags(project);
@@ -388,27 +438,6 @@ export default function Visualizer({ project, onUpdate }) {
         variant={mode === "mobile" ? "phone" : "desktop"}
       />
     );
-  } else if (viewTab === "static" && staticSource === "lofi" && Wireframe) {
-    canvas = canvasFrame(
-      <ViewScreen
-        colors={colors}
-        theme={theme}
-        aspect={preset.aspect}
-        variant={mode === "mobile" ? "phone" : "desktop"}
-      >
-        <Wireframe />
-      </ViewScreen>
-    );
-  } else if (viewTab === "static" && staticSource === "lofi") {
-    canvas = canvasFrame(
-      <PlaceholderScreen
-        colors={colors}
-        theme={theme}
-        aspect={preset.aspect}
-        variant={mode === "mobile" ? "phone" : "desktop"}
-        label="No LoFi for this view yet."
-      />
-    );
   } else if (viewTab === "static") {
     canvas = canvasFrame(
       <PlaceholderScreen
@@ -522,6 +551,15 @@ export default function Visualizer({ project, onUpdate }) {
           </div>
         </div>
 
+        {showLofi ? (
+          <div className="viz-canvas viz-lofi">
+            {mode === "mobile" ? (
+              <LofiGrid colors={colors} theme={theme} aspect={preset.aspect} />
+            ) : (
+              <p className="muted">LoFi shots are mobile only.</p>
+            )}
+          </div>
+        ) : (
         <div className="viz-body">
           <div className="viz-views">
             <div className="viz-views-head">
@@ -606,6 +644,7 @@ export default function Visualizer({ project, onUpdate }) {
             )}
           </div>
         </div>
+        )}
       </div>
 
       <aside className="viz-editors" aria-label="Design elements">
