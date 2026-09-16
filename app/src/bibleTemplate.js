@@ -13,6 +13,7 @@ export function playgroundBibleTemplate(project) {
     componentLibrary: project.componentLibrary || "unset",
     tokenFile: paths.tokensCss,
     brandColors: project.brandColors || [],
+    fonts: project.fonts || null,
   };
   return {
     paths,
@@ -23,7 +24,7 @@ export function playgroundBibleTemplate(project) {
         paths,
         project.ingested || {}
       ),
-      [paths.tokensCss]: generateTokensCss(tokens, named.brandColors),
+      [paths.tokensCss]: generateTokensCss(tokens, named.brandColors, named.fonts),
       [paths.componentsMd]: generateComponentsMd(named),
     },
   };

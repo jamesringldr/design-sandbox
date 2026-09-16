@@ -19,7 +19,7 @@
   flex-direction: column;
   background: var(--lf-bg);
   color: var(--lf-text);
-  font-family: "IBM Plex Sans", Helvetica, sans-serif;
+  font-family: var(--font-ui, "IBM Plex Sans", Helvetica, sans-serif);
   font-size: 14px;
   line-height: 1.4;
 }
@@ -76,6 +76,7 @@
 .lf-topbar-title {
   font-size: 17px;
   font-weight: 600;
+  font-family: var(--font-display, inherit);
 }
 
 .lf-back,
@@ -203,12 +204,14 @@
   font-size: 30px;
   font-weight: 600;
   letter-spacing: -0.02em;
+  font-family: var(--font-display, inherit);
 }
 
 .lf-title {
   margin: 0;
   font-size: 22px;
   font-weight: 600;
+  font-family: var(--font-display, inherit);
 }
 
 .lf-h {
@@ -236,6 +239,7 @@
 .lf-price {
   font-size: 26px;
   font-weight: 600;
+  font-family: var(--font-display, inherit);
 }
 
 /* Blocks */
@@ -669,6 +673,7 @@
   line-height: 1.1;
   letter-spacing: -0.02em;
   text-align: center;
+  font-family: var(--font-display, inherit);
 }
 
 .lf-accent {
@@ -723,6 +728,7 @@
   font-size: 26px;
   font-weight: 600;
   line-height: 1.1;
+  font-family: var(--font-display, inherit);
 }
 
 .lf-delta {

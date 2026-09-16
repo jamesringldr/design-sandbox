@@ -40,8 +40,11 @@ function readImage(file) {
 }
 
 const HOST_CSS = `:host { display: block; min-height: 100%; background: var(--background); color: var(--text);
-  font-family: "IBM Plex Sans", Helvetica, sans-serif; font-size: 14px; line-height: 1.4; }
-*, *::before, *::after { box-sizing: border-box; }`;
+  font-family: var(--font-ui); font-size: 14px; line-height: 1.4; }
+*, *::before, *::after { box-sizing: border-box; }
+h1, h2, h3, h4 { font-family: var(--font-display); }
+code, kbd, samp, pre { font-family: var(--font-mono); }
+button, input, select, textarea { font: inherit; color: inherit; }`;
 
 function ShotPage({ slug, shot }) {
   const hostRef = useRef(null);

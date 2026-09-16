@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { brandTokenId, isReservedTokenId, newBrandHex } from "../colorShuffle.js";
 import { rand } from "../colorMath.js";
 import { normalizePreviewOrigin, previewFrameSrc } from "../previewUrl.js";
+import { applyFonts, fontsCssUrl, resolveFonts, syncFontLink } from "../fonts.js";
 import { applyScales, resolveScales } from "../scales.js";
 import { LOFI_SHOTS, LofiShot } from "../screens/lofi.jsx";
 import { applyColors, resolvePaintColors, STARTER_THEMES } from "../tokens.js";
 import AppShots from "./AppShots.jsx";
+import FontEditor from "./FontEditor.jsx";
 import { ShapeEditor, SpacingEditor } from "./ScaleEditors.jsx";
 import { ShotGrid, ShotSingle } from "./ShotViews.jsx";
 import ColorwayEditor from "./ColorwayEditor.jsx";
@@ -106,7 +108,7 @@ function PhoneStage({ aspect, children }) {
   );
 }
 
-function ViewScreen({ colors, theme, scales, aspect, variant, children }) {
+function ViewScreen({ colors, theme, scales, fonts, aspect, variant, children }) {
   const ref = useRef(null);
   useEffect(() => {
     applyColors(ref.current, resolvePaintColors(colors, theme));
@@ -114,6 +116,9 @@ function ViewScreen({ colors, theme, scales, aspect, variant, children }) {
   useEffect(() => {
     if (scales) applyScales(ref.current, scales);
   }, [scales]);
+  useEffect(() => {
+    if (fonts) applyFonts(ref.current, fonts);
+  }, [fonts]);
   const phone = variant === "phone" ? parseAspect(aspect) : null;
   return (
     <div
@@ -140,11 +145,11 @@ function PlaceholderScreen({ colors, theme, aspect, variant, label }) {
   );
 }
 
-function LofiShots({ colors, theme, scales, aspect, index, onIndex }) {
+function LofiShots({ colors, theme, scales, fonts, aspect, index, onIndex }) {
   const { width, height } = parseAspect(aspect);
   const items = LOFI_SHOTS.map((shot) => ({ ...shot, width, height }));
   const renderScreen = (item) => (
-    <ViewScreen colors={colors} theme={theme} scales={scales} aspect={aspect} variant="phone">
+    <ViewScreen colors={colors} theme={theme} scales={scales} fonts={fonts} aspect={aspect} variant="phone">
       <LofiShot Screen={item.Screen} />
     </ViewScreen>
   );
@@ -226,6 +231,8 @@ export default function Visualizer({ project, onUpdate }) {
   const [capture, setCapture] = useState({ state: "idle", message: "" });
   const [draftScales, setDraftScales] = useState(() => resolveScales(project.tokenScales));
   const [savedScales, setSavedScales] = useState(() => resolveScales(project.tokenScales));
+  const [draftFonts, setDraftFonts] = useState(() => resolveFonts(project.fonts));
+  const [savedFonts, setSavedFonts] = useState(() => resolveFonts(project.fonts));
   const [openEditor, setOpenEditor] = useState(null);
   const [draftByTheme, setDraftByTheme] = useState(() => themeBags(project));
   const [savedByTheme, setSavedByTheme] = useState(() => themeBags(project));
@@ -239,6 +246,7 @@ export default function Visualizer({ project, onUpdate }) {
   const preset = presets.find((item) => item.id === presetId) || presets[0];
   const active = routes.includes(selected) ? selected : routes[0] || "";
   const scalesDirty = JSON.stringify(draftScales) !== JSON.stringify(savedScales);
+  const fontsDirty = JSON.stringify(draftFonts) !== JSON.stringify(savedFonts);
 
   useEffect(() => {
     const bags = themeBags(project);
@@ -248,7 +256,14 @@ export default function Visualizer({ project, onUpdate }) {
     const scales = resolveScales(project.tokenScales);
     setDraftScales(scales);
     setSavedScales(scales);
+    const fonts = resolveFonts(project.fonts);
+    setDraftFonts(fonts);
+    setSavedFonts(fonts);
   }, [project.id]);
+
+  useEffect(() => {
+    syncFontLink("previews", fontsCssUrl(draftFonts));
+  }, [draftFonts]);
 
   useEffect(() => {
     let cancelled = false;
@@ -429,6 +444,11 @@ export default function Visualizer({ project, onUpdate }) {
     } catch (error) {
       setCapture({ state: "error", message: error.message });
     }
+  }
+
+  function saveFonts() {
+    onUpdate({ ...project, fonts: draftFonts });
+    setSavedFonts(draftFonts);
   }
 
   function saveScales() {
@@ -619,6 +639,7 @@ export default function Visualizer({ project, onUpdate }) {
                     colors={colors}
                     theme={theme}
                     scales={draftScales}
+                    fonts={draftFonts}
                     aspect={`${item.width} / ${item.height}`}
                     variant="phone"
                   >
@@ -633,6 +654,7 @@ export default function Visualizer({ project, onUpdate }) {
                 colors={colors}
                 theme={theme}
                 scales={draftScales}
+                fonts={draftFonts}
                 aspect={preset.aspect}
                 index={lofiIndex}
                 onIndex={setLofiIndex}
@@ -811,6 +833,13 @@ export default function Visualizer({ project, onUpdate }) {
                         brandColors={project.brandColors || []}
                         onAddBrandColor={addBrandColor}
                         onRemoveBrandColor={removeBrandColor}
+                      />
+                    ) : editor.id === "libraries" ? (
+                      <FontEditor
+                        fonts={draftFonts}
+                        dirty={fontsDirty}
+                        onChange={setDraftFonts}
+                        onSave={saveFonts}
                       />
                     ) : editor.id === "spacing" ? (
                       <SpacingEditor

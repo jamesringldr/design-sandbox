@@ -60,6 +60,9 @@ function check(file) {
     if ((BORDER_SHORTHAND.test(prop) || BORDER_WIDTH.test(prop)) && /\d*\.?\d+px/.test(bare)) {
       problems.push(`px border width (use --border-width) — ${at}`);
     }
+    if ((prop === "font-family" || prop === "font") && /["'a-z]/i.test(bare.replace(/\b(inherit|initial|unset)\b/g, "").replace(/[\d.]+(px|em|rem|%)?|\/|normal|bold|italic|\s/gi, ""))) {
+      problems.push(`literal font family (use --font-ui/display/mono) — ${at}`);
+    }
     if (prop === "box-shadow" && bare.trim() && !/^none$/i.test(bare.trim()) && /\d/.test(bare)) {
       problems.push(`literal shadow (use --shadow-*) — ${at}`);
     }

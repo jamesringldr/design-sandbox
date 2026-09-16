@@ -11,6 +11,7 @@ import {
   sectionHeading,
 } from "./bibleLanguage.js";
 import { MANIFEST_PATH, parseManifest } from "./bibleManifest.js";
+import { FONT_ROLES, fontsCssUrl } from "./fonts.js";
 
 export { BIBLE_SECTIONS } from "./bibleLanguage.js";
 
@@ -72,8 +73,27 @@ export const BIBLE_TOKEN_CANDIDATES = [
   "tokens.css",
 ];
 
-export function generateTokensCss(tokens, brandColors = []) {
-  return generateBibleTokensCss(tokens, brandColors);
+export function generateTokensCss(tokens, brandColors = [], fonts = null) {
+  return generateBibleTokensCss(tokens, brandColors, fonts);
+}
+
+function familiesLines(fonts) {
+  if (!FONT_ROLES.some((role) => fonts?.[role.id])) {
+    return ["Families: **_unset_**. Name the UI font, data font, and any quarantined face here."];
+  }
+  const url = fontsCssUrl(fonts);
+  return [
+    "| Family token | Role | Family | Weights |",
+    "|---|---|---|---|",
+    ...FONT_ROLES.map((role) => {
+      const font = fonts[role.id];
+      return `| \`--${role.token}\` | ${role.use} | ${font ? font.family : "_unset_"} | ${font ? font.weights.join(", ") : "—"} |`;
+    }),
+    "",
+    `Load from Google Fonts: \`${url}\``,
+    "",
+    "Components use the family tokens, never family names.",
+  ];
 }
 
 export { generateBibleTokensCss };
@@ -162,7 +182,7 @@ function colorwayTable(tokens) {
 export function generateBibleMd(project, tokens, paths, ingested = {}) {
   const name = project.name || "Untitled";
   const brandColors = project.brandColors || [];
-  const css = generateTokensCss(tokens, brandColors).trim();
+  const css = generateTokensCss(tokens, brandColors, project.fonts).trim();
   const skeleton = [
     `# ${name} design system`,
     "",
@@ -222,7 +242,7 @@ export function generateBibleMd(project, tokens, paths, ingested = {}) {
     "",
     "Named roles, never bare pixel sizes in components. Use `var(--size-body)`, not `16px`.",
     "",
-    "Families: **_unset_**. Name the UI font, data font, and any quarantined face here.",
+    ...familiesLines(project.fonts),
     "",
     "| Role | Size token | Size | Weight | Where used |",
     "|---|---|---|---|---|",

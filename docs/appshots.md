@@ -47,7 +47,7 @@ One HTML fragment: a `<style>` block, then markup. It renders inside a shadow ro
 </div>
 ```
 
-The host already sets `background: var(--background)`, `color: var(--text)`, the UI font, `font-size: 14px`, and `box-sizing: border-box`. Reset default margins on headings and paragraphs you use.
+The host already sets `background: var(--background)`, `color: var(--text)`, `font-family: var(--font-ui)`, `font-size: 14px`, and `box-sizing: border-box`; `h1`–`h4` use `var(--font-display)` and `code`/`pre` use `var(--font-mono)`. Give other headline-style text (hero numbers, big stats) `var(--font-display)` and data text (IDs, timestamps, tabular numbers) `var(--font-mono)`. Reset default margins on headings and paragraphs you use.
 
 ## Token rules (enforced by the checker)
 
@@ -58,6 +58,7 @@ The host already sets `background: var(--background)`, `color: var(--text)`, the
 | `border-radius` | `var(--radius-*)`, `0`, `50%` | px |
 | Border widths (`border`, `border-*`, `outline`) | `var(--border-width)`, `0`, `none` | px widths |
 | `box-shadow` | `var(--shadow-1/2/3)`, `none` | literal shadows |
+| `font-family` | `var(--font-ui)`, `var(--font-display)`, `var(--font-mono)`, `inherit` | family names |
 
 **Allowed as literals:** font size, weight, line height, letter spacing; fixed element sizes (`width`, `height`, `min-*`, `max-*`, `flex-basis`, grid track sizes) — e.g. a 44px button height, a 40px avatar, a 160px placeholder; opacity; z-index.
 
@@ -80,6 +81,8 @@ Pick the nearest token instead of an exact pixel match (a 14px gap → `var(--sp
 | `--brand-<name>` | Project branding colors (e.g. `--brand-highlight`), when the screenshot uses that role |
 
 **Scale tokens:** `--space-1,2,3,4,5,6,8` (4, 8, 12, 16, 24, 32, 48px by default) · `--radius-sm/md/lg/pill` · `--border-width` · `--shadow-1/2/3`.
+
+**Font tokens:** `--font-ui` · `--font-display` · `--font-mono` (set in Libraries → Font).
 
 ## Hard rules
 

@@ -38,6 +38,7 @@ import { MANIFEST_PATH, tokenChanges } from "./src/bibleManifest.js";
 import { extractThemes, themesEmpty } from "./src/tokens.js";
 import { addShot, listShots, readShotFile, removeShot, updateShot } from "./appshots.js";
 import { captureShot } from "./capture.js";
+import { searchFonts } from "./googleFonts.js";
 
 const execFileAsync = promisify(execFile);
 const APP_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -65,6 +66,7 @@ const ROUTES = new Set([
   "/api/appshots/remove",
   "/api/appshots/file",
   "/api/appshots/capture",
+  "/api/fonts",
 ]);
 
 function send(res, status, body) {
@@ -284,7 +286,7 @@ async function scanBible(root, body, paths) {
     localPath: root,
     ...evaluateBible({
       files,
-      generatedCss: generateTokensCss(tokens, body.brandColors),
+      generatedCss: generateTokensCss(tokens, body.brandColors, body.fonts),
       hookExists,
     }),
   };
@@ -307,6 +309,20 @@ export default function localRepoPlugin() {
         }
 
         try {
+          if (req.method === "GET" && url === "/api/fonts") {
+            const query = new URL(req.url, "http://localhost").searchParams;
+            send(
+              res,
+              200,
+              await searchFonts({
+                q: query.get("q") || "",
+                category: query.get("category") || "",
+                limit: query.get("limit") || 24,
+              })
+            );
+            return;
+          }
+
           if (url.startsWith("/api/appshots")) {
             const query = new URL(req.url, "http://localhost").searchParams;
             if (req.method === "GET" && url === "/api/appshots") {
@@ -539,7 +555,7 @@ export default function localRepoPlugin() {
               path.join(root, paths.claudeMd)
             );
             const beforeCss = await fs.readFile(cssPath, "utf8").catch(() => "");
-            const nextCss = generateTokensCss(tokens, body.brandColors);
+            const nextCss = generateTokensCss(tokens, body.brandColors, body.fonts);
             await writeFileAtomic(cssPath, nextCss);
             await writeFileAtomic(
               mdPath,
@@ -549,6 +565,7 @@ export default function localRepoPlugin() {
                   componentLibrary: body.componentLibrary,
                   tokenFile: body.tokenFile,
                   brandColors: body.brandColors || [],
+                  fonts: body.fonts || null,
                 },
                 tokens,
                 paths

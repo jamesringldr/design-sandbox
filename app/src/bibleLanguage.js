@@ -1,3 +1,5 @@
+import { FONT_ROLES, fontStack } from "./fonts.js";
+
 /** Single design-bible language. Used by the template, DESIGN.md, and tokens.css. */
 
 export const BIBLE_SECTIONS = [
@@ -269,7 +271,7 @@ export function resolveCoreColors(colors) {
   });
 }
 
-export function generateBibleTokensCss(tokens, brandColors = []) {
+export function generateBibleTokensCss(tokens, brandColors = [], fonts = null) {
   const dark = tokens?.dark || {};
   const light = tokens?.light || {};
   const colorValue = (bag, token) =>
@@ -318,6 +320,10 @@ export function generateBibleTokensCss(tokens, brandColors = []) {
     ...MOTION_TOKENS.map((token) => `  ${cssVar(token.id)}: ${token.value};`),
     "  /* Type sizes */",
     ...typeLines,
+    "  /* Type families */",
+    ...FONT_ROLES.map(
+      (role) => `  --${role.token}: ${fonts?.[role.id] ? fontStack(fonts[role.id]) : ""};`
+    ),
     "}",
     lightBlock,
   ].join("\n");

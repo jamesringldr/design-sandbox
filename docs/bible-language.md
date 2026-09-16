@@ -59,8 +59,9 @@ Do not emit `--brand-500`, `--gray-950`, or hex in components. Hex lives only in
 - Radius: `--radius-sm` `--radius-md` `--radius-lg` `--radius-pill`
 - Motion: `--duration-fast` `--duration-normal` `--duration-slow`
 - Type sizes: `--size-display` `--size-title` `--size-heading` `--size-body` `--size-caption` `--size-label` `--size-data`
+- Type families: `--font-ui` (body, controls) `--font-display` (headings, hero, big numbers) `--font-mono` (data, IDs, code)
 
-Font family names are filled per product. The skeleton leaves them `_unset_`.
+Font families are chosen per product from Google Fonts in the playground (Visualizer → Libraries → Font). Unset families stay `--font-x: ;` in tokens.css and `_unset_` in 3 Type. When set, 3 Type lists each family token, family, and weights, plus the Google Fonts css2 URL to load them. Components use the family tokens, never family names.
 
 ## Template
 

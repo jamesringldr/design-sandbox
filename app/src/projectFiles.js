@@ -60,6 +60,7 @@ export function projectMeta(project, slug) {
     tokenLocks: project.tokenLocks || {},
     brandColors: project.brandColors || [],
     tokenScales: project.tokenScales || null,
+    fonts: project.fonts || null,
     elementLocks: project.elementLocks || {},
     artifacts: project.artifacts || [],
     routes: project.routes || [],
