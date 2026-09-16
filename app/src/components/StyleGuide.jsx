@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { resolveCoreColors } from "../bibleLanguage.js";
+import { resolveBrandColors, resolveCoreColors } from "../bibleLanguage.js";
 import { applyColors, themeColors } from "../tokens.js";
 
 const TYPE_ROWS = [
@@ -35,6 +35,7 @@ export default function StyleGuide({ project, onUpdate }) {
   const theme = project.theme === "light" ? "light" : "dark";
   const colors = themeColors(project);
   const coreRows = resolveCoreColors(colors);
+  const brandRows = resolveBrandColors(colors, project.brandColors);
 
   useEffect(() => {
     applyColors(rootRef.current, colors);
@@ -97,6 +98,29 @@ export default function StyleGuide({ project, onUpdate }) {
                 <span className="core-controls">{row.controls}</span>
               </div>
             ))}
+          </div>
+          <div className="core-table">
+            <div className="core-row core-head">
+              <span />
+              <span>Branding token</span>
+              <span>Name</span>
+            </div>
+            {brandRows.length ? (
+              brandRows.map((row) => (
+                <div className="core-row" key={row.id}>
+                  <span
+                    className="swatch"
+                    style={{ background: row.value || "transparent" }}
+                  />
+                  <code>{row.css}</code>
+                  <span className="core-controls">{row.label}</span>
+                </div>
+              ))
+            ) : (
+              <p className="guide-note">
+                No custom branding colors. Add them under Branding in Visualizer → Colorway.
+              </p>
+            )}
           </div>
         </section>
 

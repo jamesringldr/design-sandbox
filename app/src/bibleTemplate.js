@@ -12,6 +12,7 @@ export function playgroundBibleTemplate(project) {
     name: project.name || "Untitled",
     componentLibrary: project.componentLibrary || "unset",
     tokenFile: paths.tokensCss,
+    brandColors: project.brandColors || [],
   };
   return {
     paths,
@@ -22,7 +23,7 @@ export function playgroundBibleTemplate(project) {
         paths,
         project.ingested || {}
       ),
-      [paths.tokensCss]: generateTokensCss(tokens),
+      [paths.tokensCss]: generateTokensCss(tokens, named.brandColors),
       [paths.componentsMd]: generateComponentsMd(named),
     },
   };

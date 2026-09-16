@@ -5,6 +5,7 @@ import {
   RADIUS_TOKENS,
   SPACE_TOKENS,
   TYPE_ROLES,
+  brandColorCssVar,
   cssVar,
   generateBibleTokensCss,
   sectionHeading,
@@ -71,8 +72,8 @@ export const BIBLE_TOKEN_CANDIDATES = [
   "tokens.css",
 ];
 
-export function generateTokensCss(tokens) {
-  return generateBibleTokensCss(tokens);
+export function generateTokensCss(tokens, brandColors = []) {
+  return generateBibleTokensCss(tokens, brandColors);
 }
 
 export { generateBibleTokensCss };
@@ -112,8 +113,13 @@ export function claudeDesignSection(paths) {
   ].join("\n");
 }
 
-function colorNames() {
-  return COLOR_TOKENS.map((token) => `\`${cssVar(token.id)}\``).join(", ");
+function colorNames(brandColors = []) {
+  return [
+    ...COLOR_TOKENS.map((token) => cssVar(token.id)),
+    ...brandColors.map((color) => brandColorCssVar(color.id)),
+  ]
+    .map((name) => `\`${name}\``)
+    .join(", ");
 }
 
 function usageTable() {
@@ -122,6 +128,19 @@ function usageTable() {
     "|---|---|",
     ...COLOR_TOKENS.map(
       (token) => `| \`${cssVar(token.id)}\` | ${token.controls} |`
+    ),
+  ].join("\n");
+}
+
+function brandColorsTable(tokens, brandColors) {
+  const dark = tokens?.dark || {};
+  const light = tokens?.light || {};
+  return [
+    "| Token | Name | Dark | Light |",
+    "|---|---|---|---|",
+    ...brandColors.map(
+      (color) =>
+        `| \`${brandColorCssVar(color.id)}\` | ${color.label} | ${dark[color.id] || "—"} | ${light[color.id] || "—"} |`
     ),
   ].join("\n");
 }
@@ -142,7 +161,8 @@ function colorwayTable(tokens) {
 
 export function generateBibleMd(project, tokens, paths, ingested = {}) {
   const name = project.name || "Untitled";
-  const css = generateTokensCss(tokens).trim();
+  const brandColors = project.brandColors || [];
+  const css = generateTokensCss(tokens, brandColors).trim();
   const skeleton = [
     `# ${name} design system`,
     "",
@@ -158,7 +178,7 @@ export function generateBibleMd(project, tokens, paths, ingested = {}) {
     "",
     "**Hard rules:** No raw hex, rgb(), or rgba() in component files. No arbitrary px for spacing. No font families outside 3 Type. When a component exists in the catalog, use it. When ambiguous, stop and ask.",
     "",
-    `**Color:** ${colorNames()}`,
+    `**Color:** ${colorNames(brandColors)}`,
     "",
     `Token file: \`${paths.tokensCss}\`. Catalog: \`${paths.componentsMd}\`.`,
     "",
@@ -182,6 +202,16 @@ export function generateBibleMd(project, tokens, paths, ingested = {}) {
     "",
     colorwayTable(tokens),
     "",
+    ...(brandColors.length
+      ? [
+          "### Branding Colors",
+          "",
+          "Project-defined brand colors beyond the core set. Use them only for the role their name describes.",
+          "",
+          brandColorsTable(tokens, brandColors),
+          "",
+        ]
+      : []),
     "### Usage",
     "",
     usageTable(),

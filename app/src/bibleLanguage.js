@@ -244,6 +244,19 @@ export function cssVar(id) {
   return `--${id}`;
 }
 
+/** brandHighlight -> --color-brand-highlight */
+export function brandColorCssVar(id) {
+  return cssVar(`color-${id.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase()}`);
+}
+
+export function resolveBrandColors(colors, brandColors = []) {
+  return brandColors.map((color) => ({
+    ...color,
+    css: brandColorCssVar(color.id),
+    value: lookup(colors, [color.id]),
+  }));
+}
+
 export function resolveCoreColors(colors) {
   return CORE_COLOR_TOKENS.map((token) => {
     const aliases = HARVEST_ALIASES[token.id] || [token.id];
@@ -256,7 +269,7 @@ export function resolveCoreColors(colors) {
   });
 }
 
-export function generateBibleTokensCss(tokens) {
+export function generateBibleTokensCss(tokens, brandColors = []) {
   const dark = tokens?.dark || {};
   const light = tokens?.light || {};
   const colorValue = (bag, token) =>
@@ -269,9 +282,15 @@ export function generateBibleTokensCss(tokens) {
   const typeLines = TYPE_ROLES.map(
     (role) => `  --size-${role.id}: ${role.size};`
   );
+  const brandLines = (bag) =>
+    resolveBrandColors(bag, brandColors)
+      .filter((row) => row.value)
+      .map((row) => `  ${row.css}: ${row.value};`);
+  const darkBrand = brandLines(dark);
   const lightColors = COLOR_TOKENS.filter((token) => colorValue(light, token));
+  const lightBrand = brandLines(light);
   const lightBlock =
-    lightColors.length === 0
+    lightColors.length === 0 && lightBrand.length === 0
       ? ""
       : [
           "",
@@ -279,6 +298,7 @@ export function generateBibleTokensCss(tokens) {
           ...lightColors.map(
             (token) => `  ${cssVar(token.id)}: ${colorValue(light, token)};`
           ),
+          ...lightBrand,
           "}",
           "",
         ].join("\n");
@@ -289,6 +309,7 @@ export function generateBibleTokensCss(tokens) {
     ":root {",
     "  /* Color */",
     ...colorLines(dark),
+    ...(darkBrand.length ? ["  /* Branding */", ...darkBrand] : []),
     "  /* Space */",
     ...SPACE_TOKENS.map((token) => `  ${cssVar(token.id)}: ${token.value};`),
     "  /* Depth */",

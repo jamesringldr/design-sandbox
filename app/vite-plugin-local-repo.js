@@ -276,7 +276,7 @@ async function scanBible(root, body, paths) {
     localPath: root,
     ...evaluateBible({
       files,
-      generatedCss: generateTokensCss(tokens),
+      generatedCss: generateTokensCss(tokens, body.brandColors),
       hookExists,
     }),
   };
@@ -491,7 +491,7 @@ export default function localRepoPlugin() {
               path.join(root, paths.claudeMd)
             );
             const beforeCss = await fs.readFile(cssPath, "utf8").catch(() => "");
-            const nextCss = generateTokensCss(tokens);
+            const nextCss = generateTokensCss(tokens, body.brandColors);
             await writeFileAtomic(cssPath, nextCss);
             await writeFileAtomic(
               mdPath,
@@ -500,6 +500,7 @@ export default function localRepoPlugin() {
                   name: body.name,
                   componentLibrary: body.componentLibrary,
                   tokenFile: body.tokenFile,
+                  brandColors: body.brandColors || [],
                 },
                 tokens,
                 paths

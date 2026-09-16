@@ -21,6 +21,7 @@ function bibleBody(project) {
     name: project.name,
     componentLibrary: project.componentLibrary || "",
     colorsByTheme: project.colorsByTheme,
+    brandColors: project.brandColors || [],
     bible: paths,
   };
 }
