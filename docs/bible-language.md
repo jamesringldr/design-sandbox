@@ -57,7 +57,7 @@ Do not emit `--brand-500`, `--gray-950`, or hex in components. Hex lives only in
 
 - Space: `--space-1` … `--space-8` on a 4px base
 - Radius: `--radius-sm` `--radius-md` `--radius-lg` `--radius-pill`
-- Motion: `--duration-fast` `--duration-normal` `--duration-slow`
+- Motion: `--duration-instant` `--duration-fast` `--duration-base` `--duration-slow` `--duration-slower`; easings `--ease-standard` `--ease-emphasized` `--ease-decelerate` `--ease-accelerate` `--ease-linear`
 - Type sizes: `--size-display` `--size-title` `--size-heading` `--size-body` `--size-caption` `--size-label` `--size-data`
 - Type families: `--font-ui` (body, controls) `--font-display` (headings, hero, big numbers) `--font-mono` (data, IDs, code)
 

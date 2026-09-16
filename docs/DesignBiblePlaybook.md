@@ -150,7 +150,8 @@ radius so the gradient reads as a hairline frame"), not just a shadow value. Age
 copy the recipe; they don't reverse-engineer the effect from a screenshot.
 
 ### §7 — Motion
-Duration scale (`--duration-fast/normal/slow`), named easing curves, and the
+Duration scale (`--duration-instant/fast/base/slow/slower`), named easing curves
+(`--ease-standard/emphasized/decelerate/accelerate/linear`), and the
 `prefers-reduced-motion` rule.
 
 - **Motion intensity — one named level for the whole product:** subtle /

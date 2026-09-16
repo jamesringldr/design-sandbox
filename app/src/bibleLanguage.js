@@ -115,9 +115,16 @@ export const RADIUS_TOKENS = [
 ];
 
 export const MOTION_TOKENS = [
-  { id: "duration-fast", value: "120ms", use: "Color, chip state" },
-  { id: "duration-normal", value: "200ms", use: "Panel open, tabs" },
-  { id: "duration-slow", value: "400ms", use: "Page-level reveal" },
+  { id: "duration-instant", value: "50ms", use: "Press feedback, focus ring" },
+  { id: "duration-fast", value: "120ms", use: "Color, chip state, hover" },
+  { id: "duration-base", value: "200ms", use: "Panel open, tabs, menus" },
+  { id: "duration-slow", value: "320ms", use: "Dialogs, sheets" },
+  { id: "duration-slower", value: "500ms", use: "Page-level reveal" },
+  { id: "ease-standard", value: "cubic-bezier(0.2, 0, 0, 1)", use: "Default for state changes" },
+  { id: "ease-emphasized", value: "cubic-bezier(0.34, 1.56, 0.64, 1)", use: "Overshoot for lifts and pops" },
+  { id: "ease-decelerate", value: "cubic-bezier(0.05, 0.7, 0.1, 1)", use: "Elements entering" },
+  { id: "ease-accelerate", value: "cubic-bezier(0.3, 0, 0.8, 0.15)", use: "Elements leaving" },
+  { id: "ease-linear", value: "linear", use: "Progress, spinners" },
 ];
 
 export const TYPE_ROLES = [
