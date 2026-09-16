@@ -453,11 +453,6 @@
   font-weight: 600;
 }
 
-.lf-btn-off {
-  background: var(--lf-elevated);
-  color: var(--lf-muted);
-}
-
 .lf-stepper {
   flex-shrink: 0;
   height: 32px;
@@ -571,4 +566,174 @@
 
 .lf-dialog-actions span + span {
   border-left: 1px solid var(--lf-border);
+}
+
+/* Landing */
+
+.lf-landing {
+  padding-top: 20px;
+  align-items: center;
+  gap: 14px;
+}
+
+.lf-preview {
+  position: relative;
+  align-self: stretch;
+  padding: 48px 18px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-elevated);
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
+  mask-image: linear-gradient(to bottom, #000 72%, transparent);
+}
+
+.lf-preview-notch {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  width: 96px;
+  height: 20px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: var(--lf-surface);
+}
+
+.lf-badge {
+  position: absolute;
+  top: 24px;
+  right: -8px;
+  padding: 4px 12px;
+  transform: rotate(-12deg);
+  border-radius: 999px;
+  border: 1px solid var(--lf-brand);
+  background: var(--lf-bg);
+  color: var(--lf-brand);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lf-item-compact {
+  align-items: center;
+  padding: 10px;
+  background: var(--lf-bg);
+}
+
+.lf-thumb-sm {
+  width: 40px;
+  height: 44px;
+}
+
+.lf-avatar {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-surface);
+}
+
+.lf-btn-ghost {
+  align-self: center;
+  width: 60%;
+  height: 36px;
+  background: var(--lf-brand-subtle);
+  color: var(--lf-brand);
+  font-size: 13px;
+}
+
+.lf-hero-title {
+  margin: 4px 0 0;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.lf-accent {
+  color: var(--lf-brand);
+}
+
+.lf-center {
+  text-align: center;
+}
+
+.lf-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.lf-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--lf-border);
+}
+
+.lf-dots i.on {
+  width: 18px;
+  background: var(--lf-text);
+}
+
+.lf-btn-pill {
+  align-self: stretch;
+  border-radius: 999px;
+}
+
+/* Dashboard */
+
+.lf-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.lf-stat {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-elevated);
+}
+
+.lf-stat-value {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.lf-delta {
+  align-self: flex-start;
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--lf-brand);
+  color: var(--lf-brand);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.lf-chart {
+  height: 140px;
+  padding: 14px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--lf-border);
+  background: var(--lf-elevated);
+}
+
+.lf-chart span {
+  flex: 1;
+  border-radius: 4px;
+  background: var(--lf-surface);
+}
+
+.lf-chart span.on {
+  background: var(--lf-brand);
 }

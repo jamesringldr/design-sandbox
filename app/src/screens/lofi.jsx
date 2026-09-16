@@ -99,6 +99,98 @@ function Home() {
   );
 }
 
+function Landing() {
+  return (
+    <div className="lf-body lf-landing">
+      <div className="lf-preview">
+        <span className="lf-preview-notch" />
+        <span className="lf-badge">New</span>
+        <strong>Pick up where you left off</strong>
+        <div className="lf-item lf-item-compact">
+          <div className="lf-thumb lf-thumb-sm" />
+          <div className="lf-stack">
+            <strong>Item title</strong>
+            <span className="lf-caption">Category · 12 items</span>
+          </div>
+        </div>
+        <span className="lf-label">Suggested</span>
+        <div className="lf-item lf-item-compact">
+          <span className="lf-avatar" />
+          <div className="lf-stack lf-grow">
+            <strong>All collections</strong>
+            <span className="lf-caption">Everything you have saved</span>
+          </div>
+          <span className="lf-chev">›</span>
+        </div>
+        <div className="lf-btn lf-btn-ghost">Continue</div>
+      </div>
+      <span className="lf-spacer" />
+      <h1 className="lf-hero-title">
+        Everything <span className="lf-accent">you</span> need, in one place
+      </h1>
+      <p className="lf-copy lf-center">
+        A short line that explains what the app does and why it helps.
+      </p>
+      <div className="lf-dots" aria-hidden="true">
+        <i />
+        <i />
+        <i className="on" />
+      </div>
+      <span className="lf-spacer" />
+      <div className="lf-btn lf-btn-pill">Get started</div>
+    </div>
+  );
+}
+
+function Dashboard() {
+  const stats = [
+    { label: "Active", value: "128", delta: "+12%" },
+    { label: "Completed", value: "46", delta: "+4%" },
+  ];
+  const bars = [40, 65, 50, 80, 55, 92, 70];
+  return (
+    <>
+      <div className="lf-body">
+        <div className="lf-row lf-gap-8">
+          <span className="lf-avatar" />
+          <div className="lf-stack lf-grow">
+            <span className="lf-caption">Good morning</span>
+            <strong>Alex Morgan</strong>
+          </div>
+          <span className="lf-icon-box" />
+        </div>
+        <div className="lf-grid-2">
+          {stats.map((stat) => (
+            <div key={stat.label} className="lf-stat">
+              <span className="lf-caption">{stat.label}</span>
+              <span className="lf-stat-value">{stat.value}</span>
+              <span className="lf-delta">{stat.delta}</span>
+            </div>
+          ))}
+        </div>
+        <Section title="This week">
+          <div className="lf-chart">
+            {bars.map((height, index) => (
+              <span
+                key={index}
+                className={index === 5 ? "on" : ""}
+                style={{ height: `${height}%` }}
+              />
+            ))}
+          </div>
+        </Section>
+        <Section title="Recent activity">
+          <div className="lf-stack">
+            <RowLink title="Item updated" sub="2 min ago" />
+            <RowLink title="New item added" sub="1 hr ago" />
+          </div>
+        </Section>
+      </div>
+      <TabBar active={0} />
+    </>
+  );
+}
+
 function SearchScreen() {
   return (
     <>
@@ -146,7 +238,7 @@ function SearchScreen() {
   );
 }
 
-function Filters({ applied }) {
+function Filters() {
   const options = ["Popular", "Newest", "Closest", "Highest rated"];
   const sizes = ["XS", "S", "M", "L", "XL"];
   return (
@@ -155,18 +247,15 @@ function Filters({ applied }) {
       <div className="lf-body">
         <div className="lf-field-group">
           <span className="lf-label">Sort by</span>
-          <span className={`lf-select${applied ? " on" : ""}`}>
-            {applied ? "Newest" : "Relevance"} <b>›</b>
+          <span className="lf-select on">
+            Newest <b>›</b>
           </span>
         </div>
         <div className="lf-input">Name contains</div>
         <Section title="Type">
           <ul className="lf-radios">
             {options.map((option, index) => (
-              <li
-                key={option}
-                className={applied && index === 1 ? "on" : ""}
-              >
+              <li key={option} className={index === 1 ? "on" : ""}>
                 <i />
                 {option}
               </li>
@@ -175,25 +264,17 @@ function Filters({ applied }) {
         </Section>
         <Section title="Price">
           <div className="lf-slider">
-            <span
-              className="lf-slider-fill"
-              style={{ right: applied ? "38%" : "4%" }}
-            />
-            <span
-              className="lf-slider-knob"
-              style={{ left: applied ? "62%" : "96%" }}
-            />
+            <span className="lf-slider-fill" style={{ right: "38%" }} />
+            <span className="lf-slider-knob" style={{ left: "62%" }} />
           </div>
-          <span className="lf-caption">
-            {applied ? "$0 – $120" : "$0 – $500"}
-          </span>
+          <span className="lf-caption">$0 – $120</span>
         </Section>
         <Section title="Size">
           <div className="lf-row lf-gap-8">
             {sizes.map((size) => (
               <span
                 key={size}
-                className={`lf-seg${applied && size === "M" ? " on" : ""}`}
+                className={`lf-seg${size === "M" ? " on" : ""}`}
               >
                 {size}
               </span>
@@ -201,9 +282,7 @@ function Filters({ applied }) {
           </div>
         </Section>
         <span className="lf-spacer" />
-        <div className={applied ? "lf-btn" : "lf-btn lf-btn-off"}>
-          {applied ? "Show 24 results" : "Show results"}
-        </div>
+        <div className="lf-btn">Show 24 results</div>
       </div>
     </>
   );
@@ -300,7 +379,7 @@ function Summary() {
   );
 }
 
-function Choice({ chosen }) {
+function Choice() {
   const options = [
     { title: "Credit card", sub: "•••• 4602" },
     { title: "Debit card", sub: "•••• 1473" },
@@ -313,7 +392,7 @@ function Choice({ chosen }) {
         {options.map((option, index) => (
           <div
             key={option.title}
-            className={`lf-option${chosen && index === 0 ? " on" : ""}`}
+            className={`lf-option${index === 0 ? " on" : ""}`}
           >
             <div className="lf-stack">
               <strong>{option.title}</strong>
@@ -325,7 +404,7 @@ function Choice({ chosen }) {
           </div>
         ))}
         <span className="lf-spacer" />
-        <div className={chosen ? "lf-btn" : "lf-btn lf-btn-off"}>Continue</div>
+        <div className="lf-btn">Continue</div>
       </div>
       <TabBar active={4} />
     </>
@@ -333,14 +412,14 @@ function Choice({ chosen }) {
 }
 
 export const LOFI_SHOTS = [
+  { id: "landing", label: "Landing", Screen: Landing },
   { id: "home", label: "Home", Screen: Home },
+  { id: "dashboard", label: "Dashboard", Screen: Dashboard },
   { id: "search", label: "Search", Screen: SearchScreen },
-  { id: "filters", label: "Filters", Screen: () => <Filters applied={false} /> },
-  { id: "filters-applied", label: "Filters · applied", Screen: () => <Filters applied /> },
+  { id: "filters-applied", label: "Filters · applied", Screen: Filters },
   { id: "detail", label: "Detail · confirm", Screen: Detail },
   { id: "summary", label: "Summary", Screen: Summary },
-  { id: "choice", label: "Choice", Screen: () => <Choice chosen={false} /> },
-  { id: "choice-selected", label: "Choice · selected", Screen: () => <Choice chosen /> },
+  { id: "choice-selected", label: "Choice · selected", Screen: Choice },
 ];
 
 export function LofiShot({ Screen }) {
