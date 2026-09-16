@@ -58,6 +58,7 @@ export function projectMeta(project, slug) {
     theme: project.theme === "light" ? "light" : "dark",
     componentLibrary: project.componentLibrary || "",
     tokenLocks: project.tokenLocks || {},
+    brandColors: project.brandColors || [],
     elementLocks: project.elementLocks || {},
     artifacts: project.artifacts || [],
     routes: project.routes || [],

@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { brandTokenId, isReservedTokenId, newBrandHex } from "../colorShuffle.js";
+import { rand } from "../colorMath.js";
 import { normalizePreviewOrigin, previewFrameSrc } from "../previewUrl.js";
 import { LOFI_SHOTS, LofiShot } from "../screens/lofi.jsx";
 import { applyColors, resolvePaintColors, STARTER_THEMES } from "../tokens.js";
@@ -454,6 +456,51 @@ export default function Visualizer({ project, onUpdate }) {
     });
   }
 
+  function addBrandColor(name) {
+    const label = name.trim();
+    const id = brandTokenId(label);
+    if (!id) return "Use letters or numbers.";
+    const brandColors = project.brandColors || [];
+    if (isReservedTokenId(id) || brandColors.some((color) => color.id === id)) {
+      return `${id} already exists.`;
+    }
+    const hue = rand(0, 360);
+    setDraftByTheme((current) => ({
+      dark: { ...current.dark, [id]: newBrandHex("dark", hue) },
+      light: { ...current.light, [id]: newBrandHex("light", hue) },
+    }));
+    onUpdate({ ...project, brandColors: [...brandColors, { id, label }] });
+    return "";
+  }
+
+  function removeBrandColor(id) {
+    const without = (bag = {}) => {
+      const copy = { ...bag };
+      delete copy[id];
+      return copy;
+    };
+    const tokenLocks = without(project.tokenLocks);
+    const colorsByTheme = {
+      dark: without(project.colorsByTheme?.dark),
+      light: without(project.colorsByTheme?.light),
+    };
+    setDraftByTheme((current) => ({
+      dark: without(current.dark),
+      light: without(current.light),
+    }));
+    setSavedByTheme((current) => ({
+      dark: without(current.dark),
+      light: without(current.light),
+    }));
+    onUpdate({
+      ...project,
+      brandColors: (project.brandColors || []).filter((color) => color.id !== id),
+      tokenLocks,
+      colorsByTheme,
+      colors: colorsByTheme[theme],
+    });
+  }
+
   async function saveColors() {
     setSavingColors(true);
     setSaveError("");
@@ -788,6 +835,9 @@ export default function Visualizer({ project, onUpdate }) {
                         onSave={saveColors}
                         saving={savingColors}
                         saveError={saveError}
+                        brandColors={project.brandColors || []}
+                        onAddBrandColor={addBrandColor}
+                        onRemoveBrandColor={removeBrandColor}
                       />
                     ) : (
                       <p className="muted">Not wired yet.</p>

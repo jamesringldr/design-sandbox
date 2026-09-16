@@ -1,25 +1,55 @@
 import { colorToHex, hexToHsl, hslToHex, opaqueHex, rand } from "./colorMath.js";
 
 export const COLORWAY_TOKENS = [
-  { id: "background", label: "Background", group: "neutral" },
-  { id: "surface", label: "Surface", group: "neutral" },
-  { id: "surfaceElevated", label: "Surface Elevated", group: "neutral" },
-  { id: "border", label: "Border", group: "neutral" },
-  { id: "text", label: "Text", group: "neutral" },
-  { id: "textMuted", label: "Text Muted", group: "neutral" },
-  { id: "brand", label: "Brand", group: "brand" },
-  { id: "brandHover", label: "Brand Hover", group: "brand" },
-  { id: "brandSubtle", label: "Brand Subtle", group: "brand" },
-  { id: "warning", label: "Warning", group: "warning" },
-  { id: "warningSubtle", label: "Warning Subtle", group: "warning" },
-  { id: "success", label: "Success", group: "success" },
-  { id: "successSubtle", label: "Success Subtle", group: "success" },
-  { id: "destructive", label: "Destructive", group: "destructive" },
-  { id: "destructiveSubtle", label: "Destructive Subtle", group: "destructive" },
-  { id: "controlContrast", label: "Control Contrast", group: "other" },
-  { id: "onControlContrast", label: "On Contrast", group: "other" },
-  { id: "backgroundBrand", label: "Background Brand", group: "other" },
+  { id: "background", label: "Background", group: "neutral", section: "neutral" },
+  { id: "surface", label: "Surface", group: "neutral", section: "neutral" },
+  { id: "surfaceElevated", label: "Surface Elevated", group: "neutral", section: "neutral" },
+  { id: "border", label: "Border", group: "neutral", section: "neutral" },
+  { id: "text", label: "Text", group: "neutral", section: "neutral" },
+  { id: "textMuted", label: "Text Muted", group: "neutral", section: "neutral" },
+  { id: "brand", label: "Brand", group: "brand", section: "branding" },
+  { id: "brandHover", label: "Brand Hover", group: "brand", section: "branding" },
+  { id: "brandSubtle", label: "Brand Subtle", group: "brand", section: "branding" },
+  { id: "warning", label: "Warning", group: "warning", section: "status" },
+  { id: "warningSubtle", label: "Warning Subtle", group: "warning", section: "status" },
+  { id: "success", label: "Success", group: "success", section: "status" },
+  { id: "successSubtle", label: "Success Subtle", group: "success", section: "status" },
+  { id: "destructive", label: "Destructive", group: "destructive", section: "status" },
+  { id: "destructiveSubtle", label: "Destructive Subtle", group: "destructive", section: "status" },
+  { id: "controlContrast", label: "Control Contrast", group: "other", section: "contrast" },
+  { id: "onControlContrast", label: "On Contrast", group: "other", section: "contrast" },
+  { id: "backgroundBrand", label: "Background Brand", group: "other", section: "branding" },
 ];
+
+export const COLORWAY_SECTIONS = [
+  { id: "branding", label: "Branding" },
+  { id: "neutral", label: "Neutral" },
+  { id: "status", label: "Status" },
+  { id: "contrast", label: "Contrast" },
+];
+
+const RESERVED_IDS = new Set([
+  ...COLORWAY_TOKENS.map((row) => row.id),
+  "brandPrimary",
+  "brandSecondary",
+]);
+
+/** "Highlight" -> "brandHighlight" (painted as --brand-highlight). */
+export function brandTokenId(label) {
+  const words = String(label).trim().replace(/^brand\b/i, "").match(/[A-Za-z0-9]+/g);
+  if (!words) return "";
+  return `brand${words
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join("")}`;
+}
+
+export function isReservedTokenId(id) {
+  return RESERVED_IDS.has(id);
+}
+
+export function newBrandHex(theme, hue) {
+  return roleHex("brand", theme, hue, 0.86, 1);
+}
 
 const GROUPS = {
   neutral: ["background", "surfaceElevated", "surface", "border", "textMuted", "text"],
@@ -108,7 +138,7 @@ function roleHex(id, theme, hue, sat, alpha) {
   return hslToHex({ h: hue, s: sat, l, a: alpha ?? 1 });
 }
 
-export function shuffleAll(colors, locks, theme) {
+export function shuffleAll(colors, locks, theme, customBrandIds = []) {
   const next = { ...colors };
   const hue = rand(0, 360);
   const sat = rand(0.1, 0.22);
@@ -124,6 +154,11 @@ export function shuffleAll(colors, locks, theme) {
     for (const id of brandUnlocked) {
       next[id] = roleHex(id, theme, brandHue, 0.86, id === "brandSubtle" ? 0.14 : 1);
     }
+  }
+
+  for (const id of customBrandIds) {
+    if (isTokenLocked(locks, id)) continue;
+    next[id] = newBrandHex(theme, rand(0, 360));
   }
 
   for (const group of ["warning", "success", "destructive"]) {

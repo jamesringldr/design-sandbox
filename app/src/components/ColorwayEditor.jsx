@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { colorToHex, normalizeHex, opaqueHex } from "../colorMath.js";
 import {
+  brandTokenId,
+  COLORWAY_SECTIONS,
   COLORWAY_TOKENS,
   isTokenLocked,
   shuffleAll,
@@ -81,12 +83,22 @@ export default function ColorwayEditor({
   onSave,
   saving,
   saveError,
+  brandColors = [],
+  onAddBrandColor,
+  onRemoveBrandColor,
 }) {
   const historyRef = useRef({ dark: [], light: [] });
   const prevRef = useRef({ dark: {}, light: {} });
   const [typed, setTyped] = useState({});
   const [canUndo, setCanUndo] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [addError, setAddError] = useState("");
   const dirty = !sameColors(colors, saved);
+  const rows = [
+    ...COLORWAY_TOKENS,
+    ...brandColors.map((color) => ({ ...color, section: "branding", custom: true })),
+  ];
 
   useEffect(() => {
     setTyped({});
@@ -95,7 +107,7 @@ export default function ColorwayEditor({
 
   function commit(next) {
     const changed = [];
-    for (const row of COLORWAY_TOKENS) {
+    for (const row of rows) {
       if ((next[row.id] || "") !== (colors[row.id] || "")) changed.push(row.id);
     }
     if (!changed.length) return;
@@ -136,6 +148,18 @@ export default function ColorwayEditor({
     onChange(next);
   }
 
+  function closeAdd() {
+    setAdding(false);
+    setNewName("");
+    setAddError("");
+  }
+
+  function submitAdd() {
+    const error = onAddBrandColor(newName);
+    if (error) setAddError(error);
+    else closeAdd();
+  }
+
   function setHex(id, raw) {
     setTyped((current) => ({ ...current, [id]: raw }));
     const hex = normalizeHex(raw);
@@ -144,6 +168,85 @@ export default function ColorwayEditor({
     if (id === "brand") next.brandPrimary = hex;
     if (id === "brandHover") next.brandSecondary = hex;
     commit(next);
+  }
+
+  function renderRow(row) {
+    const value = colorToHex(colors[row.id]) || colors[row.id] || "";
+    const locked = isTokenLocked(locks, row.id);
+    const field = typed[row.id] ?? value;
+    const previous = prevRef.current[theme]?.[row.id];
+    return (
+      <div className="cw-row" key={row.id}>
+        <div className="cw-row-top">
+          <label className="cw-swatch" title={value}>
+            <input
+              type="color"
+              aria-label={`${row.label} swatch`}
+              value={opaqueHex(value)}
+              onChange={(event) => setHex(row.id, event.target.value)}
+            />
+            <span style={{ background: value || "transparent" }} />
+          </label>
+          <span className="cw-name" title={row.label}>
+            {toCssVar(row.id)}
+          </span>
+          <button
+            type="button"
+            className={`lock${locked ? " on" : ""}`}
+            aria-pressed={locked}
+            aria-label={`${locked ? "Unlock" : "Lock"} ${row.label}`}
+            onClick={() => onToggleLock(row.id)}
+          >
+            <LockIcon locked={locked} />
+          </button>
+          {row.custom ? (
+            <button
+              type="button"
+              className="viz-icon cw-remove"
+              aria-label={`Remove ${row.label}`}
+              title={`Remove ${row.label}`}
+              onClick={() => onRemoveBrandColor(row.id)}
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
+        <div className="cw-row-edit">
+          <input
+            className="input input-mono cw-hex"
+            aria-label={`${row.label} hex`}
+            spellCheck={false}
+            value={field}
+            onChange={(event) => setHex(row.id, event.target.value)}
+            onBlur={() =>
+              setTyped((current) => {
+                if (!(row.id in current)) return current;
+                const copy = { ...current };
+                delete copy[row.id];
+                return copy;
+              })
+            }
+          />
+          <button
+            type="button"
+            className="viz-icon"
+            aria-label={`Shuffle ${row.label}`}
+            onClick={() => commit(shuffleOne(colors, row.id, theme))}
+          >
+            <ShuffleIcon />
+          </button>
+          <button
+            type="button"
+            className="viz-icon"
+            aria-label={`Undo ${row.label}`}
+            disabled={!previous || previous === value}
+            onClick={() => undoOne(row.id)}
+          >
+            <UndoIcon />
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -162,7 +265,11 @@ export default function ColorwayEditor({
           type="button"
           className="viz-icon cw-tool"
           aria-label="Shuffle unlocked colors"
-          onClick={() => commit(shuffleAll(colors, locks, theme))}
+          onClick={() =>
+            commit(
+              shuffleAll(colors, locks, theme, brandColors.map((color) => color.id))
+            )
+          }
         >
           <ShuffleIcon {...TOOL_ICON} />
         </button>
@@ -180,75 +287,54 @@ export default function ColorwayEditor({
         </span>
       </div>
 
-      <div className="cw-list">
-        {COLORWAY_TOKENS.map((row) => {
-          const value = colorToHex(colors[row.id]) || colors[row.id] || "";
-          const locked = isTokenLocked(locks, row.id);
-          const field = typed[row.id] ?? value;
-          const previous = prevRef.current[theme]?.[row.id];
-          return (
-            <div className="cw-row" key={row.id}>
-              <div className="cw-row-top">
-                <label className="cw-swatch" title={value}>
-                  <input
-                    type="color"
-                    aria-label={`${row.label} swatch`}
-                    value={opaqueHex(value)}
-                    onChange={(event) => setHex(row.id, event.target.value)}
-                  />
-                  <span style={{ background: value || "transparent" }} />
-                </label>
-                <span className="cw-name" title={row.label}>
-                  {toCssVar(row.id)}
-                </span>
-                <button
-                  type="button"
-                  className={`lock${locked ? " on" : ""}`}
-                  aria-pressed={locked}
-                  aria-label={`${locked ? "Unlock" : "Lock"} ${row.label}`}
-                  onClick={() => onToggleLock(row.id)}
-                >
-                  <LockIcon locked={locked} />
-                </button>
-              </div>
-              <div className="cw-row-edit">
-                <input
-                  className="input input-mono cw-hex"
-                  aria-label={`${row.label} hex`}
-                  spellCheck={false}
-                  value={field}
-                  onChange={(event) => setHex(row.id, event.target.value)}
-                  onBlur={() =>
-                    setTyped((current) => {
-                      if (!(row.id in current)) return current;
-                      const copy = { ...current };
-                      delete copy[row.id];
-                      return copy;
-                    })
-                  }
-                />
+      {COLORWAY_SECTIONS.map((section) => {
+        const sectionRows = rows.filter((row) => row.section === section.id);
+        const branding = section.id === "branding";
+        return (
+          <section className="cw-group" key={section.id}>
+            <div className="cw-group-head">
+              <span className="eyebrow">{section.label}</span>
+              {branding ? (
                 <button
                   type="button"
                   className="viz-icon"
-                  aria-label={`Shuffle ${row.label}`}
-                  onClick={() => commit(shuffleOne(colors, row.id, theme))}
+                  aria-label="Add branding color"
+                  title="Add branding color"
+                  onClick={() => (adding ? closeAdd() : setAdding(true))}
                 >
-                  <ShuffleIcon />
+                  +
                 </button>
-                <button
-                  type="button"
-                  className="viz-icon"
-                  aria-label={`Undo ${row.label}`}
-                  disabled={!previous || previous === value}
-                  onClick={() => undoOne(row.id)}
-                >
-                  <UndoIcon />
-                </button>
-              </div>
+              ) : null}
             </div>
-          );
-        })}
-      </div>
+            {branding && adding ? (
+              <div className="cw-add">
+                <input
+                  className="input cw-hex"
+                  autoFocus
+                  aria-label="New branding color name"
+                  placeholder="Name, e.g. Highlight"
+                  value={newName}
+                  onChange={(event) => {
+                    setNewName(event.target.value);
+                    setAddError("");
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") submitAdd();
+                    if (event.key === "Escape") closeAdd();
+                  }}
+                />
+                <span className={`cw-add-hint${addError ? " error" : ""}`}>
+                  {addError ||
+                    (brandTokenId(newName)
+                      ? `Adds ${toCssVar(brandTokenId(newName))}`
+                      : "Enter to add, Esc to cancel")}
+                </span>
+              </div>
+            ) : null}
+            <div className="cw-list">{sectionRows.map(renderRow)}</div>
+          </section>
+        );
+      })}
     </div>
   );
 }

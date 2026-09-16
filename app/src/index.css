@@ -1130,6 +1130,45 @@ iframe.viz-screen {
   gap: 8px;
 }
 
+.cw-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.cw-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 28px;
+}
+
+.cw-add {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cw-add .cw-hex {
+  flex: none;
+}
+
+.cw-add-hint {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--tool-muted);
+}
+
+.cw-add-hint.error {
+  color: var(--tool-danger);
+}
+
+.cw-remove {
+  width: 22px;
+  height: 22px;
+}
+
 .cw-row {
   display: flex;
   flex-direction: column;
