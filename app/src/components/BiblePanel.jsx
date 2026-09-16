@@ -31,6 +31,7 @@ export default function BiblePanel({ project, onUpdate }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [marking, setMarking] = useState("");
   const [designOpen, setDesignOpen] = useState(true);
   const canScan = Boolean(project.localPath);
 
@@ -95,6 +96,31 @@ export default function BiblePanel({ project, onUpdate }) {
     }
   }
 
+  async function mark(nextStatus) {
+    setBusy(true);
+    setMarking("");
+    try {
+      const res = await fetch("/api/bible-mark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...bibleBody(project), status: nextStatus }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Could not update the bible status.");
+      setStatus(data);
+      setError("");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const solidified = status?.manifest?.status === "solidified";
+  const coreReady = ["manifest", "designMd", "tokensCss", "componentsMd"].every(
+    (id) => status?.items.find((item) => item.id === id)?.state === "ok"
+  );
+
   return (
     <div className="page">
       <div>
@@ -104,8 +130,8 @@ export default function BiblePanel({ project, onUpdate }) {
         </h2>
         <p className="muted">
           Playbook files in the connected repo. 0–11 are required; 12 Effects is
-          optional. Integrate writes DESIGN.md and tokens.css — it will not touch
-          theme.css.
+          optional. Integrate writes DESIGN.md and tokens.css and logs the change
+          in DESIGN-BIBLE.md — it will not touch theme.css.
         </p>
       </div>
 
@@ -209,17 +235,48 @@ export default function BiblePanel({ project, onUpdate }) {
             onClick={() => setConfirming(true)}
           >
             {busy ? "Writing…" : "Integrate into project"}
-          </button>
+          </button>{" "}
+          {status?.manifest ? (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={busy || (!solidified && !coreReady)}
+              onClick={() => setMarking(solidified ? "draft" : "solidified")}
+            >
+              {solidified ? "Reopen as draft" : "Mark solidified"}
+            </button>
+          ) : null}
+          {status?.manifest && !solidified && !coreReady ? (
+            <p className="muted">
+              Mark solidified unlocks when DESIGN.md, tokens.css, and COMPONENTS.md
+              are all Ready.
+            </p>
+          ) : null}
         </div>
       </div>
 
       {confirming ? (
         <ConfirmModal
           title="Integrate design bible"
-          body={`Write ${paths.designMd} and ${paths.tokensCss} into ${project.name}. Existing copies of those two files will be replaced. theme.css is not touched. CLAUDE.md gets a Design section only if it is missing.`}
+          body={`Write ${paths.designMd} and ${paths.tokensCss} into ${project.name}. Existing copies of those two files will be replaced. theme.css is not touched. CLAUDE.md gets a Design section only if it is missing. The change is logged in DESIGN-BIBLE.md.`}
           confirmLabel="Write files"
           onCancel={() => setConfirming(false)}
           onConfirm={integrate}
+        />
+      ) : null}
+
+      {marking ? (
+        <ConfirmModal
+          title={marking === "solidified" ? "Mark bible solidified" : "Reopen bible as draft"}
+          body={
+            marking === "solidified"
+              ? `Set DESIGN-BIBLE.md to solidified and log it. This records that the bible is settled; Integrate can still change it.`
+              : `Set DESIGN-BIBLE.md back to draft so the bible can change again.`
+          }
+          confirmLabel={marking === "solidified" ? "Solidify" : "Reopen"}
+          danger={false}
+          onCancel={() => setMarking("")}
+          onConfirm={() => mark(marking)}
         />
       ) : null}
     </div>

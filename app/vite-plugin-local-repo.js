@@ -31,8 +31,10 @@ import {
   findDesignWorktree,
   isInside,
   isMainWorkingTree,
+  recordBibleChange,
   worktreeNeedsInstall,
 } from "./src/designWorktree.js";
+import { MANIFEST_PATH, tokenChanges } from "./src/bibleManifest.js";
 import { extractThemes, themesEmpty } from "./src/tokens.js";
 
 const execFileAsync = promisify(execFile);
@@ -51,6 +53,7 @@ const ROUTES = new Set([
   "/api/bible-find",
   "/api/bible-bootstrap",
   "/api/bible-integrate",
+  "/api/bible-mark",
   "/api/dev-server/start",
   "/api/dev-server/stop",
   "/api/dev-server/status",
@@ -262,6 +265,7 @@ async function scanBible(root, body, paths) {
     tokensCss: await readRel(root, paths.tokensCss),
     componentsMd: await readRel(root, paths.componentsMd),
     claudeMd: await readRel(root, paths.claudeMd),
+    manifestMd: await readRel(root, MANIFEST_PATH),
   };
   const hookExists = await fs
     .stat(HOOK_FILE)
@@ -486,7 +490,9 @@ export default function localRepoPlugin() {
               root,
               path.join(root, paths.claudeMd)
             );
-            await writeFileAtomic(cssPath, generateTokensCss(tokens));
+            const beforeCss = await fs.readFile(cssPath, "utf8").catch(() => "");
+            const nextCss = generateTokensCss(tokens);
+            await writeFileAtomic(cssPath, nextCss);
             await writeFileAtomic(
               mdPath,
               generateBibleMd(
@@ -509,6 +515,23 @@ export default function localRepoPlugin() {
                 next.endsWith("\n") ? next : `${next}\n`
               );
             }
+            const changes = beforeCss
+              ? tokenChanges(beforeCss, nextCss)
+              : [`Created \`${paths.tokensCss}\``];
+            await recordBibleChange(root, {
+              name: body.name,
+              paths,
+              entry: {
+                title: "Integrated from the playground",
+                lines: [
+                  ...(changes.length ? changes : ["No token values changed"]),
+                  `Regenerated \`${paths.designMd}\``,
+                  ...(/^## Design\b/m.test(existingClaude)
+                    ? []
+                    : [`Added a Design section to \`${paths.claudeMd}\``]),
+                ],
+              },
+            });
             send(res, 200, {
               wrote: {
                 tokensCss: paths.tokensCss,
@@ -519,6 +542,38 @@ export default function localRepoPlugin() {
               },
               ...(await scanBible(root, body, paths)),
             });
+            return;
+          }
+
+          if (req.method === "POST" && url === "/api/bible-mark") {
+            const body = await readJsonBody(req);
+            if (!body.localPath || typeof body.localPath !== "string") {
+              send(res, 400, { error: "A local folder is required." });
+              return;
+            }
+            if (!["draft", "solidified"].includes(body.status)) {
+              send(res, 400, { error: "Status must be draft or solidified." });
+              return;
+            }
+            const root = path.resolve(body.localPath);
+            const stat = await fs.stat(root).catch(() => null);
+            if (!stat?.isDirectory()) {
+              send(res, 400, { error: "That path is not a folder." });
+              return;
+            }
+            const paths = resolvedBiblePaths(body);
+            const scan = await scanBible(root, body, paths);
+            const design = scan.items.find((item) => item.id === "designMd");
+            await recordBibleChange(root, {
+              name: body.name,
+              paths,
+              status: body.status,
+              entry: {
+                title: body.status === "solidified" ? "Solidified" : "Reopened as draft",
+                lines: [design.detail],
+              },
+            });
+            send(res, 200, await scanBible(root, body, paths));
             return;
           }
 

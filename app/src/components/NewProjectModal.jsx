@@ -54,13 +54,14 @@ export default function NewProjectModal({ onClose, onSave }) {
       setBiblePaths(found);
       if (found.found) {
         setBibleSource("found");
-        setBibleDisplay(found.designMd);
+        setBibleDisplay(`${found.designMd} · ${found.status}`);
         setTokenFile(found.tokensCss || found.designMd);
         return;
       }
       setBibleSource("");
       setBibleDisplay("Un-Committed");
       setTokenFile("");
+      if (found.hasExistingDesign) setPendingTemplate(true);
     } catch (error) {
       if (id !== pollId.current) return;
       setBibleError(error.message);
@@ -238,7 +239,7 @@ export default function NewProjectModal({ onClose, onSave }) {
           {pendingTemplate ? (
             <ConfirmModal
               title="Existing design found"
-              body={`This repo already has design files (${(biblePaths?.existing || []).join(", ")}). Integrate them into the bible, or start fresh with an empty skeleton?`}
+              body={`No DESIGN-BIBLE.md yet, but this repo has design files (${(biblePaths?.existing || []).join(", ")}). Use them to build the bible, or start fresh with an empty skeleton?`}
               confirmLabel="Start fresh"
               cancelLabel="Integrate existing"
               danger={false}

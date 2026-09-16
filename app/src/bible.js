@@ -9,6 +9,7 @@ import {
   generateBibleTokensCss,
   sectionHeading,
 } from "./bibleLanguage.js";
+import { MANIFEST_PATH, parseManifest } from "./bibleManifest.js";
 
 export { BIBLE_SECTIONS } from "./bibleLanguage.js";
 
@@ -420,7 +421,20 @@ export function evaluateBible({ files, generatedCss, hookExists }) {
       : "missing"
     : "missing";
 
+  const manifest = parseManifest(files.manifestMd);
+  const lastEntry = manifest?.entries[0];
+
   const items = [
+    {
+      id: "manifest",
+      label: "DESIGN-BIBLE.md",
+      state: manifest ? "ok" : "missing",
+      detail: manifest
+        ? `${manifest.status === "solidified" ? "Solidified" : "Draft"} · ${
+            lastEntry ? `last change ${lastEntry.date} — ${lastEntry.title}` : "no log entries"
+          }`
+        : `Not in the project yet. Integrate writes ${MANIFEST_PATH}.`,
+    },
     {
       id: "designMd",
       label: "DESIGN.md",
@@ -484,6 +498,9 @@ export function evaluateBible({ files, generatedCss, hookExists }) {
 
   return {
     items,
+    manifest: manifest
+      ? { status: manifest.status, entries: manifest.entries }
+      : null,
     sections: sectionRows,
     done,
     total: countable.length,

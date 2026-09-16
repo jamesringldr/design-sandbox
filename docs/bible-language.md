@@ -10,6 +10,7 @@ Vanyshr-specific names (`brand-500`, `navy-hero`, `§2 —`) do not belong here.
 | `docs/DESIGN.md` | Rules. Agents read this first. |
 | `src/styles/tokens.css` (or the project's token path) | Values. If a value disagrees with DESIGN.md, this file wins. |
 | `docs/COMPONENTS.md` | Adopted primitives. If a rule disagrees with DESIGN.md, DESIGN.md wins. |
+| `docs/DESIGN-BIBLE.md` | Marker and log. No design content. The header (`bible`, `status: draft\|solidified`, `project`, and the `design` / `tokens` / `components` / `claude` paths) tells the playground a bible exists and where its files are. Below it, dated entries (`## YYYY-MM-DD — Title`), newest first, record each change: creation, token value changes on Integrate, solidify / reopen. |
 
 ## Headings
 
@@ -63,7 +64,9 @@ Font family names are filled per product. The skeleton leaves them `_unset_`.
 
 ## Template
 
-`+ Template` writes this skeleton. If the repo already has design files, intake asks **Integrate existing** or **Start fresh**.
+Intake looks for `docs/DESIGN-BIBLE.md` first. If it exists, the bible is already built: intake loads the paths from its header and writes nothing. If it does not exist but design files do (`DESIGN.md`, `COMPONENTS.md`, `tokens.css`, `theme.css`), intake asks right away whether to build from them. If nothing exists, choose **Upload** or **+ Template**.
+
+`+ Template` writes this skeleton. If the repo already has design files, intake asks **Integrate existing** or **Start fresh**. Every path writes `DESIGN-BIBLE.md` with a first log entry.
 
 - **Start fresh** writes the empty skeleton.
 - **Integrate existing** treats this template as the format. An already-shaped DESIGN.md is not overwritten. An old-shaped DESIGN.md is ingested: its section bodies fill the template; color *names* stay Core Colors, with values harvested from the repo.

@@ -11,6 +11,12 @@ import {
   parseDesignSections,
 } from "./bible.js";
 import { EXISTING_DESIGN_CANDIDATES, mapHarvestedColors } from "./bibleLanguage.js";
+import {
+  MANIFEST_PATH,
+  parseManifest,
+  tokenChanges,
+  writeManifest,
+} from "./bibleManifest.js";
 import { playgroundBibleTemplate } from "./bibleTemplate.js";
 import { extractThemes } from "./tokens.js";
 
@@ -288,28 +294,66 @@ async function firstExisting(root, candidates) {
   return "";
 }
 
+export async function readManifest(rootPath) {
+  const text = await fs
+    .readFile(path.join(path.resolve(rootPath), MANIFEST_PATH), "utf8")
+    .catch(() => "");
+  return { text, manifest: parseManifest(text) };
+}
+
+// DESIGN-BIBLE.md is the marker. With it, the bible exists and its header names
+// the files. Without it, any design files found are only candidates to build from.
 export async function findBiblePresence(rootPath) {
   const root = path.resolve(rootPath);
-  const designMd = await firstExisting(root, BIBLE_DESIGN_CANDIDATES);
-  const componentsMd = await firstExisting(root, BIBLE_COMPONENT_CANDIDATES);
-  const tokensCss = await firstExisting(root, BIBLE_TOKEN_CANDIDATES);
   const existing = [];
   for (const rel of EXISTING_DESIGN_CANDIDATES) {
     if (await exists(path.join(root, rel))) existing.push(rel);
   }
+  const { manifest } = await readManifest(root);
+  if (manifest) {
+    const last = manifest.entries[0];
+    return {
+      found: true,
+      manifestPath: MANIFEST_PATH,
+      status: manifest.status,
+      lastEntry: last ? `${last.date} — ${last.title}` : "",
+      hasExistingDesign: existing.length > 0,
+      existing,
+      designMd: manifest.paths.designMd,
+      componentsMd: manifest.paths.componentsMd || "",
+      tokensCss: manifest.paths.tokensCss || "",
+      claudeMd: manifest.paths.claudeMd || "",
+    };
+  }
   return {
-    found: Boolean(designMd),
+    found: false,
+    manifestPath: "",
+    status: "",
+    lastEntry: "",
     hasExistingDesign: existing.length > 0,
     existing,
-    designMd,
-    componentsMd,
-    tokensCss,
+    designMd: await firstExisting(root, BIBLE_DESIGN_CANDIDATES),
+    componentsMd: await firstExisting(root, BIBLE_COMPONENT_CANDIDATES),
+    tokensCss: await firstExisting(root, BIBLE_TOKEN_CANDIDATES),
+    claudeMd: "",
   };
 }
 
+export async function recordBibleChange(rootPath, { name, paths, status, entry }) {
+  const root = path.resolve(rootPath);
+  const { text } = await readManifest(root);
+  const dest = path.join(root, assertSafeBibleTarget(MANIFEST_PATH));
+  await fs.mkdir(path.dirname(dest), { recursive: true });
+  await fs.writeFile(
+    dest,
+    writeManifest(text, { status, project: name, paths, entry })
+  );
+  return MANIFEST_PATH;
+}
+
 async function commitStaged(root, message) {
-  const status = await git(root, ["status", "--porcelain"]);
-  if (!status) return { committed: false };
+  const staged = await git(root, ["diff", "--cached", "--name-only"]);
+  if (!staged) return { committed: false };
   const branch = await git(root, ["symbolic-ref", "--quiet", "--short", "HEAD"]);
   await git(root, ["commit", "-m", message], {
     env: { ...process.env, GITDADDY_CONFIRM: branch },
@@ -321,6 +365,8 @@ export async function bootstrapBible(rootPath, options = {}) {
   const root = path.resolve(rootPath);
   const source = options.source || "found";
   const files = {};
+  const log = [];
+  let title = "";
   let paths = {
     designMd: options.designMd || "docs/DESIGN.md",
     tokensCss: options.tokensCss || "src/styles/tokens.css",
@@ -333,6 +379,8 @@ export async function bootstrapBible(rootPath, options = {}) {
     let ingested = {};
     let keepDesignMd = false;
     let keepComponentsMd = false;
+    let harvestedFrom = "";
+    let existingMdRel = "";
     if (source === "template-integrate") {
       const harvestFrom =
         options.uploadPath ||
@@ -347,9 +395,12 @@ export async function bootstrapBible(rootPath, options = {}) {
         const text = await fs.readFile(file, "utf8").catch(() => "");
         if (!text) continue;
         harvested = mapHarvestedColors(extractThemes(text, file));
-        if (Object.keys(harvested.dark).length) break;
+        if (Object.keys(harvested.dark).length) {
+          harvestedFrom = path.relative(root, file).replace(/\\/g, "/");
+          break;
+        }
       }
-      const existingMdRel = await firstExisting(root, BIBLE_DESIGN_CANDIDATES);
+      existingMdRel = await firstExisting(root, BIBLE_DESIGN_CANDIDATES);
       if (existingMdRel) {
         const existingMd = await fs.readFile(path.join(root, existingMdRel), "utf8");
         if (isTemplateShaped(existingMd)) {
@@ -370,12 +421,43 @@ export async function bootstrapBible(rootPath, options = {}) {
     });
     paths = template.paths;
     Object.assign(files, template.files);
-    if (keepDesignMd) delete files[paths.designMd];
-    if (keepComponentsMd) delete files[paths.componentsMd];
+    if (keepDesignMd) {
+      delete files[paths.designMd];
+      paths = { ...paths, designMd: existingMdRel };
+    }
+    if (keepComponentsMd) {
+      delete files[paths.componentsMd];
+      paths = {
+        ...paths,
+        componentsMd: await firstExisting(root, BIBLE_COMPONENT_CANDIDATES),
+      };
+    }
+    if (source === "template") {
+      title = "Created from the playground template";
+      log.push("Empty skeleton; no existing design files used");
+    } else {
+      title = "Built from existing design files";
+      if (keepDesignMd) {
+        log.push(`Kept \`${existingMdRel}\` (already in template shape)`);
+      } else if (existingMdRel) {
+        const used = Object.keys(ingested).join(", ");
+        log.push(
+          `Ingested \`${existingMdRel}\` into the template${used ? ` (sections ${used})` : ""}`
+        );
+      }
+      if (keepComponentsMd) log.push(`Kept \`${paths.componentsMd}\``);
+      log.push(
+        harvestedFrom
+          ? `Colors harvested from \`${harvestedFrom}\``
+          : "No color values found to harvest"
+      );
+    }
   } else if (source === "upload") {
     const upload = path.resolve(options.uploadPath || "");
     if (!options.uploadPath) throw new Error("Choose a file to upload.");
     const text = await fs.readFile(upload, "utf8");
+    title = "Uploaded design bible";
+    log.push(`\`${paths.designMd}\` from \`${options.uploadPath}\``);
     if (isInside(root, upload)) {
       paths = {
         ...paths,
@@ -393,9 +475,23 @@ export async function bootstrapBible(rootPath, options = {}) {
     if (!isInside(root, dest)) {
       throw new Error("Refusing to write outside the worktree.");
     }
+    if (safe === paths.tokensCss) {
+      const before = await fs.readFile(dest, "utf8").catch(() => "");
+      if (before) log.push(...tokenChanges(before, content));
+    }
     await fs.mkdir(path.dirname(dest), { recursive: true });
     await fs.writeFile(dest, content.endsWith("\n") ? content : `${content}\n`);
     written.push(safe);
+  }
+
+  if (title) {
+    written.push(
+      await recordBibleChange(root, {
+        name: options.name || "Untitled",
+        paths,
+        entry: { title, lines: log },
+      })
+    );
   }
 
   if (written.length) {
