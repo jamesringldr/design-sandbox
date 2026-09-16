@@ -10,7 +10,7 @@ Vanyshr-specific names (`brand-500`, `navy-hero`, `§2 —`) do not belong here.
 | `docs/DESIGN.md` | Rules. Agents read this first. |
 | `src/styles/tokens.css` (or the project's token path) | Values. If a value disagrees with DESIGN.md, this file wins. |
 | `docs/COMPONENTS.md` | Adopted primitives. If a rule disagrees with DESIGN.md, DESIGN.md wins. |
-| `docs/DESIGN-BIBLE.md` | Marker and log. No design content. The header (`bible`, `status: draft\|solidified`, `project`, and the `design` / `tokens` / `components` / `claude` paths) tells the playground a bible exists and where its files are. Below it, dated entries (`## YYYY-MM-DD — Title`), newest first, record each change: creation, token value changes on Integrate, solidify / reopen. |
+| `docs/DESIGN-BIBLE.md` | Marker and log. No design content. The header (`bible`, `status: draft\|solidified`, `project`, and the `design` / `tokens` / `components` / `claude` paths) tells the playground a bible exists and where its files are. Below it, dated entries (`## YYYY-MM-DD — Title`), newest first, record each change: creation, token value changes on Integrate (format-only rewrites such as `rgb()` → hex are not logged), solidify / reopen. |
 
 ## Headings
 

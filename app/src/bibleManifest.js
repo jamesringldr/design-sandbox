@@ -1,3 +1,5 @@
+import { colorToHex } from "./colorMath.js";
+
 export const MANIFEST_PATH = "docs/DESIGN-BIBLE.md";
 export const MANIFEST_VERSION = 1;
 export const MANIFEST_STATUSES = ["draft", "solidified"];
@@ -98,7 +100,14 @@ function cssVars(css) {
   return vars;
 }
 
-// One log line per token that changed between two tokens.css versions.
+// rgb(20 171 254) and #14ABFE are the same value; only real changes get logged.
+function sameValue(a, b) {
+  if (a === b) return true;
+  const hex = colorToHex(a);
+  return Boolean(hex) && hex === colorToHex(b);
+}
+
+// One log line per token whose value changed between two tokens.css versions.
 export function tokenChanges(beforeCss, afterCss) {
   const before = cssVars(beforeCss);
   const after = cssVars(afterCss);
@@ -106,7 +115,7 @@ export function tokenChanges(beforeCss, afterCss) {
   let added = 0;
   for (const [name, value] of after) {
     if (!before.has(name)) added += 1;
-    else if (before.get(name) !== value) {
+    else if (!sameValue(before.get(name), value)) {
       lines.push(`\`${name}\`: ${before.get(name)} → ${value}`);
     }
   }
