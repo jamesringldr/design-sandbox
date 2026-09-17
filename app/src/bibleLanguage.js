@@ -1,3 +1,4 @@
+import { brandPaletteLabel, normalizeBrandPalette } from "./colorShuffle.js";
 import { FONT_ROLES, fontStack } from "./fonts.js";
 
 /** Single design-bible language. Used by the template, DESIGN.md, and tokens.css. */
@@ -25,6 +26,7 @@ export function sectionHeading(id, title) {
 export const COLOR_TOKENS = [
   {
     id: "color-primary",
+    label: "Primary",
     group: "core",
     seed: "color-primary",
     controls:
@@ -32,6 +34,7 @@ export const COLOR_TOKENS = [
   },
   {
     id: "color-primary-on",
+    label: "Primary On",
     group: "core",
     seed: "color-primary-on",
     controls:
@@ -39,6 +42,7 @@ export const COLOR_TOKENS = [
   },
   {
     id: "color-secondary",
+    label: "Secondary",
     group: "core",
     seed: "color-secondary",
     controls:
@@ -46,6 +50,7 @@ export const COLOR_TOKENS = [
   },
   {
     id: "color-accent",
+    label: "Accent",
     group: "core",
     seed: "color-accent",
     controls:
@@ -53,6 +58,7 @@ export const COLOR_TOKENS = [
   },
   {
     id: "color-bg-app",
+    label: "Background",
     group: "core",
     seed: "color-bg-app",
     controls:
@@ -60,6 +66,7 @@ export const COLOR_TOKENS = [
   },
   {
     id: "color-bg-surface",
+    label: "Surface",
     group: "core",
     seed: "color-bg-surface",
     controls:
@@ -67,6 +74,7 @@ export const COLOR_TOKENS = [
   },
   {
     id: "color-text-primary",
+    label: "Text",
     group: "core",
     seed: "color-text-primary",
     controls:
@@ -74,6 +82,7 @@ export const COLOR_TOKENS = [
   },
   {
     id: "color-text-secondary",
+    label: "Text Secondary",
     group: "core",
     seed: "color-text-secondary",
     controls:
@@ -81,6 +90,7 @@ export const COLOR_TOKENS = [
   },
   {
     id: "color-border",
+    label: "Border",
     group: "core",
     seed: "color-border",
     controls:
@@ -88,6 +98,7 @@ export const COLOR_TOKENS = [
   },
   {
     id: "color-status-danger",
+    label: "Danger",
     group: "core",
     seed: "color-status-danger",
     controls:
@@ -259,8 +270,9 @@ export function brandColorCssVar(id) {
 }
 
 export function resolveBrandColors(colors, brandColors = []) {
-  return brandColors.map((color) => ({
+  return normalizeBrandPalette(brandColors).map((color, index) => ({
     ...color,
+    label: brandPaletteLabel(index),
     css: brandColorCssVar(color.id),
     value: lookup(colors, [color.id]),
   }));

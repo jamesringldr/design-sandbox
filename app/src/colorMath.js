@@ -55,6 +55,12 @@ export function colorToHex(value) {
   return rgb ? rgbToHex(rgb) : "";
 }
 
+export function rgbString(value) {
+  const rgb = parseRgb(value);
+  if (!rgb) return "";
+  return `rgb(${clampByte(rgb.r)}, ${clampByte(rgb.g)}, ${clampByte(rgb.b)})`;
+}
+
 export function hexToHsl(hex) {
   const rgb = parseRgb(hex);
   if (!rgb) return null;

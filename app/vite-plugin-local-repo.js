@@ -566,6 +566,7 @@ export default function localRepoPlugin() {
                 {
                   name: body.name,
                   componentLibrary: body.componentLibrary,
+                  iconLibrary: body.iconLibrary,
                   tokenFile: body.tokenFile,
                   brandColors: body.brandColors || [],
                   fonts: body.fonts || null,

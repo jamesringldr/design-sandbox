@@ -275,14 +275,14 @@
   aspect-ratio: 3 / 4;
 }
 
-.lf-tile-label {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 10px;
+.lf-tile-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lf-tile-caption {
   text-align: center;
-  font-size: 12px;
-  font-weight: 500;
 }
 
 .lf-banner {

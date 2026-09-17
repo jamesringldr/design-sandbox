@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { colorToHex, normalizeHex, opaqueHex } from "../colorMath.js";
 import {
-  brandTokenId,
+  brandPaletteLabel,
   COLORWAY_SECTIONS,
   COLORWAY_TOKENS,
   isTokenLocked,
@@ -84,20 +84,20 @@ export default function ColorwayEditor({
   saving,
   saveError,
   brandColors = [],
-  onAddBrandColor,
-  onRemoveBrandColor,
 }) {
   const historyRef = useRef({ dark: [], light: [] });
   const prevRef = useRef({ dark: {}, light: {} });
   const [typed, setTyped] = useState({});
   const [canUndo, setCanUndo] = useState(false);
-  const [adding, setAdding] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [addError, setAddError] = useState("");
   const dirty = !sameColors(colors, saved);
   const rows = [
     ...COLORWAY_TOKENS,
-    ...brandColors.map((color) => ({ ...color, section: "branding", custom: true })),
+    ...brandColors.map((color, index) => ({
+      ...color,
+      label: brandPaletteLabel(index),
+      section: "branding",
+      palette: true,
+    })),
   ];
 
   useEffect(() => {
@@ -148,18 +148,6 @@ export default function ColorwayEditor({
     onChange(next);
   }
 
-  function closeAdd() {
-    setAdding(false);
-    setNewName("");
-    setAddError("");
-  }
-
-  function submitAdd() {
-    const error = onAddBrandColor(newName);
-    if (error) setAddError(error);
-    else closeAdd();
-  }
-
   function setHex(id, raw) {
     setTyped((current) => ({ ...current, [id]: raw }));
     const hex = normalizeHex(raw);
@@ -170,7 +158,57 @@ export default function ColorwayEditor({
     commit(next);
   }
 
+  function renderPaletteRow(row) {
+    const value = colorToHex(colors[row.id]) || colors[row.id] || "";
+    const locked = isTokenLocked(locks, row.id);
+    return (
+      <div className="cw-row" key={row.id}>
+        <div className="cw-row-top">
+          <span className="cw-swatch cw-swatch-static" title={value}>
+            <span style={{ background: value || "transparent" }} />
+          </span>
+          <span className="cw-name" title={toCssVar(row.id)}>
+            {row.label}
+          </span>
+          <button
+            type="button"
+            className={`lock${locked ? " on" : ""}`}
+            aria-pressed={locked}
+            aria-label={`${locked ? "Unlock" : "Lock"} ${row.label}`}
+            onClick={() => onToggleLock(row.id)}
+          >
+            <LockIcon locked={locked} />
+          </button>
+        </div>
+        <div
+          className="cw-row-edit cw-palette-pick"
+          role="group"
+          aria-label={`Pick ${row.label} from the Brand Palette`}
+        >
+          {brandColors.map((swatch, index) => {
+            const swatchLabel = brandPaletteLabel(index);
+            const swatchHex = colorToHex(colors[swatch.id]) || colors[swatch.id] || "";
+            const selected = Boolean(swatchHex) && swatchHex === value;
+            return (
+              <button
+                key={swatch.id}
+                type="button"
+                className={`cw-palette-swatch${selected ? " on" : ""}`}
+                style={{ background: swatchHex || "transparent" }}
+                disabled={!swatchHex}
+                title={swatchLabel}
+                aria-label={`Set ${row.label} to ${swatchLabel}`}
+                onClick={() => setHex(row.id, swatchHex)}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   function renderRow(row) {
+    if (row.pickFromPalette) return renderPaletteRow(row);
     const value = colorToHex(colors[row.id]) || colors[row.id] || "";
     const locked = isTokenLocked(locks, row.id);
     const field = typed[row.id] ?? value;
@@ -187,8 +225,8 @@ export default function ColorwayEditor({
             />
             <span style={{ background: value || "transparent" }} />
           </label>
-          <span className="cw-name" title={row.label}>
-            {toCssVar(row.id)}
+          <span className="cw-name" title={toCssVar(row.id)}>
+            {row.label}
           </span>
           <button
             type="button"
@@ -199,23 +237,13 @@ export default function ColorwayEditor({
           >
             <LockIcon locked={locked} />
           </button>
-          {row.custom ? (
-            <button
-              type="button"
-              className="viz-icon cw-remove"
-              aria-label={`Remove ${row.label}`}
-              title={`Remove ${row.label}`}
-              onClick={() => onRemoveBrandColor(row.id)}
-            >
-              ×
-            </button>
-          ) : null}
         </div>
         <div className="cw-row-edit">
           <input
             className="input input-mono cw-hex"
             aria-label={`${row.label} hex`}
             spellCheck={false}
+            autoComplete="off"
             value={field}
             onChange={(event) => setHex(row.id, event.target.value)}
             onBlur={() =>
@@ -289,48 +317,11 @@ export default function ColorwayEditor({
 
       {COLORWAY_SECTIONS.map((section) => {
         const sectionRows = rows.filter((row) => row.section === section.id);
-        const branding = section.id === "branding";
         return (
           <section className="cw-group" key={section.id}>
             <div className="cw-group-head">
               <span className="eyebrow">{section.label}</span>
-              {branding ? (
-                <button
-                  type="button"
-                  className="viz-icon"
-                  aria-label="Add branding color"
-                  title="Add branding color"
-                  onClick={() => (adding ? closeAdd() : setAdding(true))}
-                >
-                  +
-                </button>
-              ) : null}
             </div>
-            {branding && adding ? (
-              <div className="cw-add">
-                <input
-                  className="input cw-hex"
-                  autoFocus
-                  aria-label="New branding color name"
-                  placeholder="Name, e.g. Highlight"
-                  value={newName}
-                  onChange={(event) => {
-                    setNewName(event.target.value);
-                    setAddError("");
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") submitAdd();
-                    if (event.key === "Escape") closeAdd();
-                  }}
-                />
-                <span className={`cw-add-hint${addError ? " error" : ""}`}>
-                  {addError ||
-                    (brandTokenId(newName)
-                      ? `Adds ${toCssVar(brandTokenId(newName))}`
-                      : "Enter to add, Esc to cancel")}
-                </span>
-              </div>
-            ) : null}
             <div className="cw-list">{sectionRows.map(renderRow)}</div>
           </section>
         );

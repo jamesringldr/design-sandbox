@@ -67,6 +67,15 @@ function Section({ title, children }) {
   );
 }
 
+function TileCard({ tall, children }) {
+  return (
+    <div className="lf-tile-card">
+      <div className={`lf-tile${tall ? " lf-tile-tall" : ""}`} />
+      <span className="lf-caption lf-tile-caption">{children}</span>
+    </div>
+  );
+}
+
 function Home() {
   return (
     <>
@@ -76,9 +85,9 @@ function Home() {
         <Section title="Featured">
           <div className="lf-grid-3">
             {["Northwind", "Atlas", "Meridian"].map((name) => (
-              <div key={name} className="lf-tile lf-tile-tall">
-                <span className="lf-tile-label">{name}</span>
-              </div>
+              <TileCard key={name} tall>
+                {name}
+              </TileCard>
             ))}
           </div>
         </Section>
@@ -89,8 +98,9 @@ function Home() {
           </div>
         </Section>
         <Section title="Upcoming">
-          <div className="lf-banner">
-            <span className="lf-tile-label">Spring session</span>
+          <div className="lf-tile-card">
+            <div className="lf-banner" />
+            <span className="lf-caption lf-tile-caption">Spring session</span>
           </div>
         </Section>
       </div>
@@ -205,13 +215,9 @@ function SearchScreen() {
         </div>
         <Section title="Categories">
           <div className="lf-grid-3">
-            {["Outdoor", "Studio", "Travel", "Home", "Tools", "Kids"].map(
-              (name) => (
-                <div key={name} className="lf-tile">
-                  <span className="lf-tile-label">{name}</span>
-                </div>
-              )
-            )}
+            {["Outdoor", "Studio", "Travel", "Home", "Tools", "Kids"].map((name) => (
+              <TileCard key={name}>{name}</TileCard>
+            ))}
           </div>
         </Section>
         <Section title="Trending searches">

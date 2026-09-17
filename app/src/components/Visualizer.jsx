@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { brandTokenId, isReservedTokenId, newBrandHex } from "../colorShuffle.js";
-import { rand } from "../colorMath.js";
+import { normalizeBrandPalette } from "../colorShuffle.js";
 import { normalizePreviewOrigin, previewFrameSrc } from "../previewUrl.js";
 import { applyFonts, fontsCssUrl, resolveFonts, syncFontLink } from "../fonts.js";
 import { applyScales, resolveScales } from "../scales.js";
 import { LOFI_SHOTS, LofiShot } from "../screens/lofi.jsx";
 import { applyColors, resolvePaintColors, STARTER_THEMES } from "../tokens.js";
+import { COMPONENT_LIBRARY_PRESETS, ICON_LIBRARY_PRESETS } from "../libraryPresets.js";
 import AppShots from "./AppShots.jsx";
 import FontEditor from "./FontEditor.jsx";
+import LibraryField from "./LibraryField.jsx";
 import { ShapeEditor, SpacingEditor } from "./ScaleEditors.jsx";
 import { ShotGrid, ShotSingle } from "./ShotViews.jsx";
 import ColorwayEditor from "./ColorwayEditor.jsx";
@@ -20,6 +21,7 @@ const VIEW_TABS = [
 
 const EDITORS = [
   { id: "colorway", label: "Colorway" },
+  { id: "typography", label: "Typography" },
   { id: "libraries", label: "Libraries" },
   { id: "spacing", label: "Spacing" },
   { id: "elevation", label: "Elevation, Borders, Radius" },
@@ -240,6 +242,7 @@ export default function Visualizer({ project, onUpdate }) {
   const [saveError, setSaveError] = useState("");
   const theme = project.theme === "light" ? "light" : "dark";
   const colors = draftByTheme[theme];
+  const brandColors = normalizeBrandPalette(project.brandColors);
   const previewOrigin = normalizePreviewOrigin(project.previewUrl);
   const presets = mode === "mobile" ? MOBILE_PRESETS : DESKTOP_PRESETS;
   const presetId = mode === "mobile" ? mobilePreset : desktopPreset;
@@ -377,50 +380,6 @@ export default function Visualizer({ project, onUpdate }) {
     });
   }
 
-  function addBrandColor(name) {
-    const label = name.trim();
-    const id = brandTokenId(label);
-    if (!id) return "Use letters or numbers.";
-    const brandColors = project.brandColors || [];
-    if (isReservedTokenId(id) || brandColors.some((color) => color.id === id)) {
-      return `${id} already exists.`;
-    }
-    const hue = rand(0, 360);
-    setDraftByTheme((current) => ({
-      dark: { ...current.dark, [id]: newBrandHex("dark", hue) },
-      light: { ...current.light, [id]: newBrandHex("light", hue) },
-    }));
-    onUpdate({ ...project, brandColors: [...brandColors, { id, label }] });
-    return "";
-  }
-
-  function removeBrandColor(id) {
-    const without = (bag = {}) => {
-      const copy = { ...bag };
-      delete copy[id];
-      return copy;
-    };
-    const tokenLocks = without(project.tokenLocks);
-    const colorsByTheme = {
-      dark: without(project.colorsByTheme?.dark),
-      light: without(project.colorsByTheme?.light),
-    };
-    setDraftByTheme((current) => ({
-      dark: without(current.dark),
-      light: without(current.light),
-    }));
-    setSavedByTheme((current) => ({
-      dark: without(current.dark),
-      light: without(current.light),
-    }));
-    onUpdate({
-      ...project,
-      brandColors: (project.brandColors || []).filter((color) => color.id !== id),
-      tokenLocks,
-      colorsByTheme,
-      colors: colorsByTheme[theme],
-    });
-  }
 
   async function captureLive() {
     const { width, height } = parseAspect(preset.aspect);
@@ -830,17 +789,36 @@ export default function Visualizer({ project, onUpdate }) {
                         onSave={saveColors}
                         saving={savingColors}
                         saveError={saveError}
-                        brandColors={project.brandColors || []}
-                        onAddBrandColor={addBrandColor}
-                        onRemoveBrandColor={removeBrandColor}
+                        brandColors={brandColors}
                       />
-                    ) : editor.id === "libraries" ? (
+                    ) : editor.id === "typography" ? (
                       <FontEditor
                         fonts={draftFonts}
                         dirty={fontsDirty}
                         onChange={setDraftFonts}
                         onSave={saveFonts}
                       />
+                    ) : editor.id === "libraries" ? (
+                      <div className="viz-libraries">
+                        <LibraryField
+                          id="viz-component-library"
+                          label="Component library"
+                          presets={COMPONENT_LIBRARY_PRESETS}
+                          value={project.componentLibrary || ""}
+                          onChange={(componentLibrary) =>
+                            onUpdate({ ...project, componentLibrary })
+                          }
+                        />
+                        <LibraryField
+                          id="viz-icon-library"
+                          label="Icon library"
+                          presets={ICON_LIBRARY_PRESETS}
+                          value={project.iconLibrary || ""}
+                          onChange={(iconLibrary) =>
+                            onUpdate({ ...project, iconLibrary })
+                          }
+                        />
+                      </div>
                     ) : editor.id === "spacing" ? (
                       <SpacingEditor
                         scales={draftScales}

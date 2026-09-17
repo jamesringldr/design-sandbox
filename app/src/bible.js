@@ -11,6 +11,7 @@ import {
   sectionHeading,
 } from "./bibleLanguage.js";
 import { MANIFEST_PATH, parseManifest } from "./bibleManifest.js";
+import { brandPaletteLabel, normalizeBrandPalette } from "./colorShuffle.js";
 import { FONT_ROLES, fontsCssUrl } from "./fonts.js";
 
 export { BIBLE_SECTIONS } from "./bibleLanguage.js";
@@ -181,7 +182,10 @@ function colorwayTable(tokens) {
 
 export function generateBibleMd(project, tokens, paths, ingested = {}) {
   const name = project.name || "Untitled";
-  const brandColors = project.brandColors || [];
+  const brandColors = normalizeBrandPalette(project.brandColors).map((color, index) => ({
+    ...color,
+    label: brandPaletteLabel(index),
+  }));
   const css = generateTokensCss(tokens, brandColors, project.fonts).trim();
   const skeleton = [
     `# ${name} design system`,
@@ -222,16 +226,12 @@ export function generateBibleMd(project, tokens, paths, ingested = {}) {
     "",
     colorwayTable(tokens),
     "",
-    ...(brandColors.length
-      ? [
-          "### Branding Colors",
-          "",
-          "Project-defined brand colors beyond the core set. Use them only for the role their name describes.",
-          "",
-          brandColorsTable(tokens, brandColors),
-          "",
-        ]
-      : []),
+    "### Brand Palette",
+    "",
+    "Named by position — \"Primary 1\" is whichever swatch is first, and so on. `--color-primary` and `--color-secondary` are picked from these, not freehand.",
+    "",
+    brandColorsTable(tokens, brandColors),
+    "",
     "### Usage",
     "",
     usageTable(),
@@ -291,7 +291,9 @@ export function generateBibleMd(project, tokens, paths, ingested = {}) {
     "",
     sectionHeading("8", "Icons"),
     "",
-    "_Stub. Name the icon package, import pattern, and sizing scale._",
+    project.iconLibrary
+      ? `Icon library: \`${project.iconLibrary}\`. Name the import pattern and sizing scale.`
+      : "_Stub. Name the icon package, import pattern, and sizing scale._",
     "",
     sectionHeading("9", "States"),
     "",
@@ -325,6 +327,8 @@ export function generateBibleMd(project, tokens, paths, ingested = {}) {
     "- Do not exceed the motion intensity in 7 Motion without a stated reason.",
     "",
     sectionHeading("11", "Components"),
+    "",
+    `Library: ${project.componentLibrary ? `\`${project.componentLibrary}\`` : "**_unset_**"}.`,
     "",
     `None adopted yet. Catalog: \`${paths.componentsMd}\`. Add a row when a primitive is adopted.`,
     "",

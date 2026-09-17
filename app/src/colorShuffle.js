@@ -7,8 +7,8 @@ export const COLORWAY_TOKENS = [
   { id: "border", label: "Border", group: "neutral", section: "neutral" },
   { id: "text", label: "Text", group: "neutral", section: "neutral" },
   { id: "textMuted", label: "Text Muted", group: "neutral", section: "neutral" },
-  { id: "brand", label: "Brand", group: "brand", section: "branding" },
-  { id: "brandHover", label: "Brand Hover", group: "brand", section: "branding" },
+  { id: "brand", label: "Brand", group: "brand", section: "branding", pickFromPalette: true },
+  { id: "brandHover", label: "Brand Hover", group: "brand", section: "branding", pickFromPalette: true },
   { id: "brandSubtle", label: "Brand Subtle", group: "brand", section: "branding" },
   { id: "warning", label: "Warning", group: "warning", section: "status" },
   { id: "warningSubtle", label: "Warning Subtle", group: "warning", section: "status" },
@@ -22,11 +22,61 @@ export const COLORWAY_TOKENS = [
 ];
 
 export const COLORWAY_SECTIONS = [
-  { id: "branding", label: "Branding" },
+  { id: "branding", label: "Brand Palette" },
   { id: "neutral", label: "Neutral" },
   { id: "status", label: "Status" },
   { id: "contrast", label: "Contrast" },
 ];
+
+// New projects start with 4 default Brand Palette swatches. Beyond that
+// starting point, the palette is add/remove (edited on Project Settings);
+// "brand" and "brandHover" (color-primary / color-secondary) are set by
+// picking one of the current palette entries, rather than a freehand hex.
+export const BRAND_PALETTE_SIZE = 4;
+
+// Names are purely positional — "Primary 1" is always whatever sits first,
+// "Primary 2" second, and so on. There's no custom naming; deleting an
+// earlier swatch shifts everyone after it up by one, name included.
+export function brandPaletteLabel(index) {
+  return `Primary ${index + 1}`;
+}
+
+export function brandPaletteId(index) {
+  return brandTokenId(brandPaletteLabel(index));
+}
+
+/** Only seeds the 4 default "Primary N" swatches when a project has no
+ * palette at all yet. Never pads or truncates an existing (possibly
+ * customized, possibly shorter or longer) palette — add/remove is real. */
+export function normalizeBrandPalette(brandColors = []) {
+  if (brandColors.length) return brandColors;
+  return Array.from({ length: BRAND_PALETTE_SIZE }, (_, i) => ({
+    id: brandPaletteId(i),
+    label: brandPaletteLabel(i),
+  }));
+}
+
+/** Re-derives id/label from array position (see brandPaletteId/Label above)
+ * and migrates each swatch's stored hex from its old id to its new one, so
+ * an add or remove never loses a color — it only renames slots. */
+export function renumberBrandPalette(brandColors, colorsByTheme = {}) {
+  const dark = { ...(colorsByTheme.dark || {}) };
+  const light = { ...(colorsByTheme.light || {}) };
+  const next = brandColors.map((color, index) => {
+    const id = brandPaletteId(index);
+    const label = brandPaletteLabel(index);
+    if (id !== color.id) {
+      for (const bag of [dark, light]) {
+        if (color.id in bag) {
+          bag[id] = bag[color.id];
+          delete bag[color.id];
+        }
+      }
+    }
+    return { id, label };
+  });
+  return { brandColors: next, colorsByTheme: { dark, light } };
+}
 
 const RESERVED_IDS = new Set([
   ...COLORWAY_TOKENS.map((row) => row.id),
@@ -148,7 +198,10 @@ export function shuffleAll(colors, locks, theme, customBrandIds = []) {
     next[id] = roleHex(id, theme, hue, sat, id === "border" ? 0.1 : 1);
   }
 
-  const brandUnlocked = unlockedIn("brand", locks);
+  // brand/brandHover are set by picking a Brand Palette swatch, not shuffled.
+  const brandUnlocked = unlockedIn("brand", locks).filter(
+    (id) => id !== "brand" && id !== "brandHover"
+  );
   if (brandUnlocked.length) {
     const brandHue = rand(0, 360);
     for (const id of brandUnlocked) {

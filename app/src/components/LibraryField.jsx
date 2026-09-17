@@ -1,11 +1,15 @@
 import { useState } from "react";
 
-const PRESETS = ["shadcn", "boardui"];
-
-export default function ComponentLibraryField({ value, onChange, id = "component-library" }) {
+export default function LibraryField({
+  value,
+  onChange,
+  id = "library",
+  label = "Component library",
+  presets = [],
+}) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
-  const options = [...new Set([...PRESETS, value].filter(Boolean))];
+  const options = [...new Set([...presets, value].filter(Boolean))];
 
   function commitNew() {
     const name = draft.trim();
@@ -18,7 +22,7 @@ export default function ComponentLibraryField({ value, onChange, id = "component
   if (adding) {
     return (
       <div className="field">
-        <label htmlFor={`${id}-new`}>Component library</label>
+        <label htmlFor={`${id}-new`}>{label}</label>
         <div className="row">
           <input
             id={`${id}-new`}
@@ -54,7 +58,7 @@ export default function ComponentLibraryField({ value, onChange, id = "component
 
   return (
     <div className="field">
-      <label htmlFor={id}>Component library</label>
+      <label htmlFor={id}>{label}</label>
       <select
         id={id}
         className="input"
