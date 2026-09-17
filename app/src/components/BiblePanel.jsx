@@ -24,6 +24,7 @@ function bibleBody(project) {
     colorsByTheme: project.colorsByTheme,
     brandColors: project.brandColors || [],
     fonts: project.fonts || null,
+    tokenScales: project.tokenScales || null,
     bible: paths,
   };
 }

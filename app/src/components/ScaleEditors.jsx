@@ -1,12 +1,19 @@
-// Spacing and Elevation/Borders/Radius panels. Both edit one scales object
-// (see scales.js) with undo and save, like the Colorway panel.
+// Layout panel: spacing base + density, and radius/shadow style presets.
+// One combined scales object (see scales.js) with undo and save, like the
+// Colorway panel. Presets write concrete token values (so anything reading
+// --radius-md etc. keeps working unchanged) and remember which preset is
+// active so its tile/pill stays highlighted.
 import { useRef, useState } from "react";
-import LockIcon from "./LockIcon.jsx";
 import {
-  RADIUS_STEPS,
+  applyDensity,
+  applyRadiusPreset,
+  applyShadowPreset,
+  DENSITY_OPTIONS,
+  RADIUS_PRESETS,
+  RADIUS_PRESET_OPTIONS,
   rebaseSpace,
-  SHADOW_STEPS,
-  SPACE_STEPS,
+  SHADOW_PRESETS,
+  SHADOW_PRESET_OPTIONS,
   shadowValue,
 } from "../scales.js";
 
@@ -98,20 +105,25 @@ function Toolbar({ label, history, dirty, onSave }) {
   );
 }
 
-export function SpacingEditor({ scales, dirty, locks, onChange, onToggleLock, onSave }) {
+const RADIUS_LABELS = { sharp: "Sharp", subtle: "Subtle", rounded: "Rounded", pill: "Pill" };
+const SHADOW_LABELS = { none: "None", soft: "Soft", balanced: "Balanced", sharp: "Sharp" };
+
+export function LayoutEditor({ scales, dirty, locks, onChange, onSave }) {
   const history = useHistory(scales, onChange);
+
   return (
     <div className="cw">
-      <Toolbar label="spacing" history={history} dirty={dirty} onSave={onSave} />
+      <Toolbar label="layout" history={history} dirty={dirty} onSave={onSave} />
+
       <section className="cw-group">
         <div className="cw-group-head">
-          <span className="eyebrow">Base unit</span>
+          <span className="eyebrow">Spacing Base</span>
         </div>
         <div className="sc-row">
           <input
             className="sc-range"
             type="range"
-            aria-label="Base unit slider"
+            aria-label="Spacing base slider"
             min="2"
             max="8"
             step="0.5"
@@ -119,7 +131,7 @@ export function SpacingEditor({ scales, dirty, locks, onChange, onToggleLock, on
             onChange={(event) => history.commit(rebaseSpace(scales, Number(event.target.value), locks))}
           />
           <NumberField
-            label="Base unit"
+            label="Spacing base"
             value={scales.spaceBase}
             min={1}
             max={16}
@@ -129,83 +141,68 @@ export function SpacingEditor({ scales, dirty, locks, onChange, onToggleLock, on
         </div>
         <p className="sc-hint">Unlocked steps follow the base (×1, 2, 3, 4, 6, 8, 12).</p>
       </section>
+
       <section className="cw-group">
         <div className="cw-group-head">
-          <span className="eyebrow">Scale</span>
+          <span className="eyebrow">Density</span>
         </div>
-        <div className="cw-list">
-          {SPACE_STEPS.map((step) => {
-            const locked = Boolean(locks[step.id]);
-            return (
-              <div className="cw-row" key={step.id}>
-                <div className="cw-row-top">
-                  <span className="sc-bar" style={{ width: Math.min(scales.space[step.id], 64) }} />
-                  <span className="cw-name" title={step.use}>--{step.id}</span>
-                  <button
-                    type="button"
-                    className={`lock${locked ? " on" : ""}`}
-                    aria-pressed={locked}
-                    aria-label={`${locked ? "Unlock" : "Lock"} ${step.id}`}
-                    onClick={() => onToggleLock(step.id)}
-                  >
-                    <LockIcon locked={locked} />
-                  </button>
-                </div>
-                <div className="cw-row-edit">
-                  <NumberField
-                    label={`${step.id} value`}
-                    value={scales.space[step.id]}
-                    max={256}
-                    step={0.5}
-                    onChange={(value) =>
-                      history.commit({ ...scales, space: { ...scales.space, [step.id]: value } })
-                    }
-                  />
-                  <span className="sc-use">{step.use}</span>
-                </div>
-              </div>
-            );
-          })}
+        <div className="seg" role="group" aria-label="Density">
+          {DENSITY_OPTIONS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              className={scales.density === option ? "on" : ""}
+              aria-pressed={scales.density === option}
+              onClick={() => history.commit(applyDensity(scales, option, locks))}
+            >
+              {option[0].toUpperCase() + option.slice(1)}
+            </button>
+          ))}
         </div>
       </section>
-    </div>
-  );
-}
-
-export function ShapeEditor({ scales, dirty, onChange, onSave }) {
-  const history = useHistory(scales, onChange);
-  const setShadow = (id, key, value) =>
-    history.commit({
-      ...scales,
-      shadows: { ...scales.shadows, [id]: { ...scales.shadows[id], [key]: value } },
-    });
-
-  return (
-    <div className="cw">
-      <Toolbar label="elevation, borders, and radius" history={history} dirty={dirty} onSave={onSave} />
 
       <section className="cw-group">
         <div className="cw-group-head">
           <span className="eyebrow">Radius</span>
         </div>
-        <div className="cw-list">
-          {RADIUS_STEPS.map((step) => (
-            <div className="cw-row" key={step.id}>
-              <div className="cw-row-top">
-                <span className="sc-radius" style={{ borderRadius: Math.min(scales.radius[step.id], 12) }} />
-                <span className="cw-name" title={step.use}>--{step.id}</span>
-              </div>
-              <div className="cw-row-edit">
-                <NumberField
-                  label={`${step.id} value`}
-                  value={scales.radius[step.id]}
-                  onChange={(value) =>
-                    history.commit({ ...scales, radius: { ...scales.radius, [step.id]: value } })
-                  }
-                />
-                <span className="sc-use">{step.use}</span>
-              </div>
-            </div>
+        <div className="sc-preset-grid">
+          {RADIUS_PRESET_OPTIONS.map((preset) => {
+            const sample = Math.min(RADIUS_PRESETS[preset]["radius-md"], 18);
+            return (
+              <button
+                key={preset}
+                type="button"
+                className={`sc-preset-tile${scales.radiusStyle === preset ? " on" : ""}`}
+                aria-pressed={scales.radiusStyle === preset}
+                onClick={() => history.commit(applyRadiusPreset(scales, preset))}
+              >
+                <span className="sc-preset-preview" style={{ borderRadius: sample }} />
+                {RADIUS_LABELS[preset]}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="cw-group">
+        <div className="cw-group-head">
+          <span className="eyebrow">Shadow</span>
+        </div>
+        <div className="sc-preset-grid">
+          {SHADOW_PRESET_OPTIONS.map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              className={`sc-preset-tile${scales.shadowStyle === preset ? " on" : ""}`}
+              aria-pressed={scales.shadowStyle === preset}
+              onClick={() => history.commit(applyShadowPreset(scales, preset))}
+            >
+              <span
+                className="sc-preset-preview"
+                style={{ boxShadow: shadowValue(SHADOW_PRESETS[preset]["shadow-2"]) }}
+              />
+              {SHADOW_LABELS[preset]}
+            </button>
           ))}
         </div>
       </section>
@@ -229,34 +226,6 @@ export function ShapeEditor({ scales, dirty, onChange, onSave }) {
             />
             <span className="sc-use">Outlines, inputs, dividers</span>
           </div>
-        </div>
-      </section>
-
-      <section className="cw-group">
-        <div className="cw-group-head">
-          <span className="eyebrow">Elevation</span>
-        </div>
-        <div className="cw-list">
-          {SHADOW_STEPS.map((step) => {
-            const shadow = scales.shadows[step.id];
-            return (
-              <div className="cw-row" key={step.id}>
-                <div className="cw-row-top">
-                  <span className="sc-shadow" style={{ boxShadow: shadowValue(shadow) }} />
-                  <span className="cw-name" title={step.use}>--{step.id}</span>
-                </div>
-                <div className="sc-shadow-fields">
-                  <span>Y</span>
-                  <NumberField label={`${step.id} offset`} value={shadow.y} max={64} unit="" onChange={(v) => setShadow(step.id, "y", v)} />
-                  <span>Blur</span>
-                  <NumberField label={`${step.id} blur`} value={shadow.blur} max={128} unit="" onChange={(v) => setShadow(step.id, "blur", v)} />
-                  <span>Alpha</span>
-                  <NumberField label={`${step.id} opacity`} value={shadow.alpha} max={1} step={0.05} unit="" onChange={(v) => setShadow(step.id, "alpha", v)} />
-                </div>
-                <span className="sc-use">{step.use}</span>
-              </div>
-            );
-          })}
         </div>
       </section>
     </div>

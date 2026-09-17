@@ -13,6 +13,27 @@ import {
 import { MANIFEST_PATH, parseManifest } from "./bibleManifest.js";
 import { brandPaletteLabel, normalizeBrandPalette } from "./colorShuffle.js";
 import { FONT_ROLES, fontsCssUrl } from "./fonts.js";
+import { resolveScales, SHADOW_STEPS, shadowValue } from "./scales.js";
+
+function capitalize(word) {
+  return word ? word[0].toUpperCase() + word.slice(1) : word;
+}
+
+// bibleLanguage.js can't import scales.js (scales.js already imports it, for
+// SPACE_TOKENS/RADIUS_TOKENS — a cycle). So the CSS block and the §4/§6
+// tables take pre-resolved, pre-formatted strings from here instead.
+function resolvedScaleStrings(tokenScales) {
+  const resolved = resolveScales(tokenScales);
+  return {
+    ...resolved,
+    space: Object.fromEntries(Object.entries(resolved.space).map(([id, px]) => [id, `${px}px`])),
+    radius: Object.fromEntries(Object.entries(resolved.radius).map(([id, px]) => [id, `${px}px`])),
+    borderWidth: `${resolved.borderWidth}px`,
+    shadows: Object.fromEntries(
+      Object.entries(resolved.shadows).map(([id, shadow]) => [id, shadowValue(shadow)])
+    ),
+  };
+}
 
 export { BIBLE_SECTIONS } from "./bibleLanguage.js";
 
@@ -74,8 +95,8 @@ export const BIBLE_TOKEN_CANDIDATES = [
   "tokens.css",
 ];
 
-export function generateTokensCss(tokens, brandColors = [], fonts = null) {
-  return generateBibleTokensCss(tokens, brandColors, fonts);
+export function generateTokensCss(tokens, brandColors = [], fonts = null, tokenScales = null) {
+  return generateBibleTokensCss(tokens, brandColors, fonts, resolvedScaleStrings(tokenScales));
 }
 
 function familiesLines(fonts) {
@@ -186,7 +207,8 @@ export function generateBibleMd(project, tokens, paths, ingested = {}) {
     ...color,
     label: brandPaletteLabel(index),
   }));
-  const css = generateTokensCss(tokens, brandColors, project.fonts).trim();
+  const scales = resolvedScaleStrings(project.tokenScales);
+  const css = generateTokensCss(tokens, brandColors, project.fonts, project.tokenScales).trim();
   const skeleton = [
     `# ${name} design system`,
     "",
@@ -253,12 +275,12 @@ export function generateBibleMd(project, tokens, paths, ingested = {}) {
     "",
     sectionHeading("4", "Space"),
     "",
-    "Base unit: **4px**. Do not invent off-scale gaps.",
+    `Base unit: **${scales.spaceBase}px** · density **${capitalize(scales.density)}**. Do not invent off-scale gaps.`,
     "",
     "| Token | Value | Use |",
     "|---|---|---|",
     ...SPACE_TOKENS.map(
-      (token) => `| \`${cssVar(token.id)}\` | ${token.value} | ${token.use} |`
+      (token) => `| \`${cssVar(token.id)}\` | ${scales.space[token.id]} | ${token.use} |`
     ),
     "",
     sectionHeading("5", "Layout"),
@@ -267,12 +289,18 @@ export function generateBibleMd(project, tokens, paths, ingested = {}) {
     "",
     sectionHeading("6", "Depth"),
     "",
-    "_Stub. Name elevation (border vs shadow), radius, and any recurring construction recipes._",
+    `Radius style **${capitalize(scales.radiusStyle)}**, shadow style **${capitalize(scales.shadowStyle)}**, border width **${scales.borderWidth}**.`,
     "",
     "| Token | Value | Use |",
     "|---|---|---|",
     ...RADIUS_TOKENS.map(
-      (token) => `| \`${cssVar(token.id)}\` | ${token.value} | ${token.use} |`
+      (token) => `| \`${cssVar(token.id)}\` | ${scales.radius[token.id]} | ${token.use} |`
+    ),
+    "",
+    "| Token | Value | Use |",
+    "|---|---|---|",
+    ...SHADOW_STEPS.map(
+      (step) => `| \`--${step.id}\` | ${scales.shadows[step.id]} | ${step.use} |`
     ),
     "",
     sectionHeading("7", "Motion"),

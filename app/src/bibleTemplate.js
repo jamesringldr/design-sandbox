@@ -15,6 +15,7 @@ export function playgroundBibleTemplate(project) {
     tokenFile: paths.tokensCss,
     brandColors: project.brandColors || [],
     fonts: project.fonts || null,
+    tokenScales: project.tokenScales || null,
   };
   return {
     paths,
@@ -25,7 +26,7 @@ export function playgroundBibleTemplate(project) {
         paths,
         project.ingested || {}
       ),
-      [paths.tokensCss]: generateTokensCss(tokens, named.brandColors, named.fonts),
+      [paths.tokensCss]: generateTokensCss(tokens, named.brandColors, named.fonts, named.tokenScales),
       [paths.componentsMd]: generateComponentsMd(named),
     },
   };

@@ -290,7 +290,7 @@ export function resolveCoreColors(colors) {
   });
 }
 
-export function generateBibleTokensCss(tokens, brandColors = [], fonts = null) {
+export function generateBibleTokensCss(tokens, brandColors = [], fonts = null, resolvedScales = null) {
   const dark = tokens?.dark || {};
   const light = tokens?.light || {};
   const colorValue = (bag, token) =>
@@ -332,9 +332,17 @@ export function generateBibleTokensCss(tokens, brandColors = [], fonts = null) {
     ...colorLines(dark),
     ...(darkBrand.length ? ["  /* Branding */", ...darkBrand] : []),
     "  /* Space */",
-    ...SPACE_TOKENS.map((token) => `  ${cssVar(token.id)}: ${token.value};`),
+    ...SPACE_TOKENS.map(
+      (token) => `  ${cssVar(token.id)}: ${resolvedScales?.space?.[token.id] ?? token.value};`
+    ),
     "  /* Depth */",
-    ...RADIUS_TOKENS.map((token) => `  ${cssVar(token.id)}: ${token.value};`),
+    ...RADIUS_TOKENS.map(
+      (token) => `  ${cssVar(token.id)}: ${resolvedScales?.radius?.[token.id] ?? token.value};`
+    ),
+    ...(resolvedScales ? [`  --border-width: ${resolvedScales.borderWidth};`] : []),
+    ...(resolvedScales
+      ? Object.entries(resolvedScales.shadows).map(([id, value]) => `  --${id}: ${value};`)
+      : []),
     "  /* Motion */",
     ...MOTION_TOKENS.map((token) => `  ${cssVar(token.id)}: ${token.value};`),
     "  /* Type sizes */",
