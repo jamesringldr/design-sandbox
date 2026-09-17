@@ -10,7 +10,8 @@ export function playgroundBibleTemplate(project) {
   const tokens = project.colorsByTheme || { light: {}, dark: {} };
   const named = {
     name: project.name || "Untitled",
-    componentLibrary: project.componentLibrary || "unset",
+    componentLibrary: project.componentLibrary || "",
+    iconLibrary: project.iconLibrary || "",
     tokenFile: paths.tokensCss,
     brandColors: project.brandColors || [],
     fonts: project.fonts || null,

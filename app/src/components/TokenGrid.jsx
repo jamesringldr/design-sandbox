@@ -1,4 +1,5 @@
 import { resolveCoreColors } from "../bibleLanguage.js";
+import { rgbString } from "../colorMath.js";
 import { themeColors } from "../tokens.js";
 import LockIcon from "./LockIcon.jsx";
 
@@ -33,7 +34,10 @@ export default function TokenGrid({ project, onThemeChange, onToggleLock }) {
       <div className="core-table compact">
         <div className="core-row core-head">
           <span />
-          <span>Seed token</span>
+          <span>Display Name</span>
+          <span>Token Name</span>
+          <span>Hex</span>
+          <span>RGB</span>
           <span>What it controls</span>
           {onToggleLock ? <span /> : null}
         </div>
@@ -43,14 +47,17 @@ export default function TokenGrid({ project, onThemeChange, onToggleLock }) {
               className="swatch"
               style={{ background: row.value || "transparent" }}
             />
-            <code>{row.css}</code>
+            <span className="core-name">{row.label}</span>
+            <code className="core-var">{row.css}</code>
+            <code>{row.value || "—"}</code>
+            <code>{rgbString(row.value) || "—"}</code>
             <span className="core-controls">{row.controls}</span>
             {onToggleLock ? (
               <button
                 type="button"
                 className={`lock ${project.tokenLocks?.[row.id] ? "on" : ""}`}
                 aria-pressed={Boolean(project.tokenLocks?.[row.id])}
-                aria-label={`${project.tokenLocks?.[row.id] ? "Unlock" : "Lock"} ${row.seed}`}
+                aria-label={`${project.tokenLocks?.[row.id] ? "Unlock" : "Lock"} ${row.label}`}
                 onClick={() => onToggleLock(row.id)}
               >
                 <LockIcon locked={Boolean(project.tokenLocks?.[row.id])} />

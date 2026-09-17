@@ -36,22 +36,34 @@ Subheads under 10: `### 10a Mechanical` and `### 10b Judgment`.
 
 ## Core Colors
 
-CSS custom properties. Seed names are the token. Group labels are documentation only — they are not a column in the UI.
+CSS custom properties. The token is the seed name; the display name is a short
+human label for the same row — both are real columns everywhere this table
+renders (Style Guide, Project Settings), alongside that row's live hex and rgb.
 
-| Seed token | What it controls |
-|---|---|
-| `--color-primary` | Main buttons, active tabs, key accents, selected states. Brand identifier. |
-| `--color-primary-on` | Text/icons on `color-primary`. Must hold contrast. |
-| `--color-secondary` | Secondary buttons, badges, subtle interactive elements. |
-| `--color-accent` | Sparse callouts, feature highlights, promo. |
-| `--color-bg-app` | Screen/viewport canvas. |
-| `--color-bg-surface` | Cards, modals, sidebars, dropdowns. |
-| `--color-text-primary` | Headings, body, primary icons. |
-| `--color-text-secondary` | Captions, muted, disabled, placeholders. |
-| `--color-border` | Outlines, input borders, dividers. |
-| `--color-status-danger` | Errors, destructive actions, delete alerts. |
+| Display name | Token name | What it controls |
+|---|---|---|
+| Primary | `--color-primary` | Main buttons, active tabs, key accents, selected states. Brand identifier. |
+| Primary On | `--color-primary-on` | Text/icons on `color-primary`. Must hold contrast. |
+| Secondary | `--color-secondary` | Secondary buttons, badges, subtle interactive elements. |
+| Accent | `--color-accent` | Sparse callouts, feature highlights, promo. |
+| Background | `--color-bg-app` | Screen/viewport canvas. |
+| Surface | `--color-bg-surface` | Cards, modals, sidebars, dropdowns. |
+| Text | `--color-text-primary` | Headings, body, primary icons. |
+| Text Secondary | `--color-text-secondary` | Captions, muted, disabled, placeholders. |
+| Border | `--color-border` | Outlines, input borders, dividers. |
+| Danger | `--color-status-danger` | Errors, destructive actions, delete alerts. |
 
 Do not emit `--brand-500`, `--gray-950`, or hex in components. Hex lives only in `tokens.css`.
+
+## Brand Palette
+
+A project's own brand swatches, separate from the 10 Core Colors above. Always
+at least one swatch; add/remove freely (Project Settings). Names are purely
+positional — "Primary 1" is whichever swatch is first, "Primary 2" second, and
+so on; deleting an earlier swatch renumbers everything after it, value
+included, not just the label. `--color-primary` and `--color-secondary` are
+set by picking one of these swatches (Visualizer → Colorway), not a freehand
+hex — so every brand-flavored core color traces back to a named palette entry.
 
 ## Space, depth, motion, type
 
@@ -61,7 +73,12 @@ Do not emit `--brand-500`, `--gray-950`, or hex in components. Hex lives only in
 - Type sizes: `--size-display` `--size-title` `--size-heading` `--size-body` `--size-caption` `--size-label` `--size-data`
 - Type families: `--font-ui` (body, controls) `--font-display` (headings, hero, big numbers) `--font-mono` (data, IDs, code)
 
-Font families are chosen per product from Google Fonts in the playground (Visualizer → Libraries → Font). Unset families stay `--font-x: ;` in tokens.css and `_unset_` in 3 Type. When set, 3 Type lists each family token, family, and weights, plus the Google Fonts css2 URL to load them. Components use the family tokens, never family names.
+Font families are chosen per product from Google Fonts in the playground (Visualizer → Typography). Unset families stay `--font-x: ;` in tokens.css and `_unset_` in 3 Type. When set, 3 Type lists each family token, family, and weights, plus the Google Fonts css2 URL to load them. Components use the family tokens, never family names.
+
+Component library and icon library (Visualizer → Libraries, or Project Settings)
+each pick from a default list plus "+ Add new" for anything not listed. Component
+library feeds 11 Components' `Library:` line; icon library feeds 8 Icons — both
+read `**_unset_**` until chosen.
 
 ## Template
 

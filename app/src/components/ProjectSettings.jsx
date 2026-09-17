@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { parseGithubUrl } from "../github.js";
+import { COMPONENT_LIBRARY_PRESETS } from "../libraryPresets.js";
 import { discoverTokens } from "../sync.js";
 import { ELEMENT_LOCKS } from "../tokens.js";
-import ComponentLibraryField from "./ComponentLibraryField.jsx";
+import BrandPaletteField from "./BrandPaletteField.jsx";
+import LibraryField from "./LibraryField.jsx";
 import LockIcon from "./LockIcon.jsx";
 import RepoSource from "./RepoSource.jsx";
 import StringList from "./StringList.jsx";
@@ -216,11 +218,16 @@ export default function ProjectSettings({ project, onUpdate, onRemove }) {
             });
           }}
         />
-        <ComponentLibraryField
+        <LibraryField
           id="settings-library"
+          presets={COMPONENT_LIBRARY_PRESETS}
           value={project.componentLibrary || ""}
           onChange={(componentLibrary) => patch({ componentLibrary })}
         />
+      </div>
+
+      <div className="panel">
+        <BrandPaletteField project={project} onUpdate={onUpdate} />
       </div>
 
       <div className="panel">

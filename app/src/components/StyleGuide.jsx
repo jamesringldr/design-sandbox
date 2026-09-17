@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MOTION_TOKENS, resolveBrandColors, resolveCoreColors } from "../bibleLanguage.js";
+import { rgbString } from "../colorMath.js";
 import { applyScales, resolveScales, SHADOW_STEPS, shadowValue } from "../scales.js";
 import { applyColors, themeColors } from "../tokens.js";
 
@@ -133,10 +134,29 @@ export default function StyleGuide({ project, onUpdate }) {
       <div ref={rootRef} className="preview-root guide">
         <section className="guide-section">
           <SectionHead n="01" title="Core Colors" />
+          <div className="brand-palette">
+            <div className="brand-palette-label">Brand Palette</div>
+            <div className="brand-palette-row">
+              {brandRows.map((row) => (
+                <div className="brand-palette-item" key={row.id} title={row.css}>
+                  <span
+                    className="brand-palette-swatch"
+                    style={{ background: row.value || "transparent" }}
+                  />
+                  <span className="core-controls">{row.label}</span>
+                  <code>{row.value || "—"}</code>
+                  <code>{rgbString(row.value) || "—"}</code>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="core-table">
             <div className="core-row core-head">
               <span />
-              <span>Seed token</span>
+              <span>Display Name</span>
+              <span>Token Name</span>
+              <span>Hex</span>
+              <span>RGB</span>
               <span>What it controls</span>
             </div>
             {coreRows.map((row) => (
@@ -145,33 +165,13 @@ export default function StyleGuide({ project, onUpdate }) {
                   className="swatch"
                   style={{ background: row.value || "transparent" }}
                 />
-                <code>{row.css}</code>
+                <span className="core-name">{row.label}</span>
+                <code className="core-var">{row.css}</code>
+                <code>{row.value || "—"}</code>
+                <code>{rgbString(row.value) || "—"}</code>
                 <span className="core-controls">{row.controls}</span>
               </div>
             ))}
-          </div>
-          <div className="core-table">
-            <div className="core-row core-head">
-              <span />
-              <span>Branding token</span>
-              <span>Name</span>
-            </div>
-            {brandRows.length ? (
-              brandRows.map((row) => (
-                <div className="core-row" key={row.id}>
-                  <span
-                    className="swatch"
-                    style={{ background: row.value || "transparent" }}
-                  />
-                  <code>{row.css}</code>
-                  <span className="core-controls">{row.label}</span>
-                </div>
-              ))
-            ) : (
-              <p className="guide-note">
-                No custom branding colors. Add them under Branding in Visualizer → Colorway.
-              </p>
-            )}
           </div>
         </section>
 

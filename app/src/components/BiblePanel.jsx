@@ -20,6 +20,7 @@ function bibleBody(project) {
     tokenFile: project.tokenFile || "",
     name: project.name,
     componentLibrary: project.componentLibrary || "",
+    iconLibrary: project.iconLibrary || "",
     colorsByTheme: project.colorsByTheme,
     brandColors: project.brandColors || [],
     fonts: project.fonts || null,
