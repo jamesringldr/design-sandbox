@@ -9,7 +9,7 @@ import { COMPONENT_LIBRARY_PRESETS, ICON_LIBRARY_PRESETS } from "../libraryPrese
 import AppShots from "./AppShots.jsx";
 import FontEditor from "./FontEditor.jsx";
 import LibraryField from "./LibraryField.jsx";
-import { ShapeEditor, SpacingEditor } from "./ScaleEditors.jsx";
+import { LayoutEditor } from "./ScaleEditors.jsx";
 import { ShotGrid, ShotSingle } from "./ShotViews.jsx";
 import ColorwayEditor from "./ColorwayEditor.jsx";
 
@@ -23,8 +23,7 @@ const EDITORS = [
   { id: "colorway", label: "Colorway" },
   { id: "typography", label: "Typography" },
   { id: "libraries", label: "Libraries" },
-  { id: "spacing", label: "Spacing" },
-  { id: "elevation", label: "Elevation, Borders, Radius" },
+  { id: "layout", label: "Layout" },
 ];
 
 function themeBags(project) {
@@ -819,19 +818,11 @@ export default function Visualizer({ project, onUpdate }) {
                           }
                         />
                       </div>
-                    ) : editor.id === "spacing" ? (
-                      <SpacingEditor
+                    ) : editor.id === "layout" ? (
+                      <LayoutEditor
                         scales={draftScales}
                         dirty={scalesDirty}
                         locks={project.tokenLocks || {}}
-                        onChange={setDraftScales}
-                        onToggleLock={toggleLock}
-                        onSave={saveScales}
-                      />
-                    ) : editor.id === "elevation" ? (
-                      <ShapeEditor
-                        scales={draftScales}
-                        dirty={scalesDirty}
                         onChange={setDraftScales}
                         onSave={saveScales}
                       />
